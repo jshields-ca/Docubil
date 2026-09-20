@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Integration tests for the PDF Accessibility Tool API.
+ * Integration tests for the Docubil API.
  * These tests make real HTTP calls against the Express app.
  */
 

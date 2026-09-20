@@ -1,5 +1,5 @@
 {
-  "name": "pdf-accessibility",
+  "name": "docubil",
   "version": "0.0.1",
   "description": "Web application for PDF accessibility evaluation and automatic remediation.",
   "main": "server.js",
@@ -65,7 +65,7 @@
   "author": "Jeremy Shields",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jshields-ca/pdf-accessibility.git"
+    "url": "https://github.com/jshields-ca/Docubil.git"
   },
-  "license": "MIT"
+  "license": "AGPL-3.0-only"
 }

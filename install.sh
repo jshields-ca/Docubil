@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # PDF Accessibility Tool Installation Script
-echo "🔧 Installing PDF Accessibility Tool..."
+echo "🔧 Installing Docubil..."
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
@@ -82,6 +82,6 @@ echo "🚀 Ready to make PDFs accessible!"
 read -p "🤔 Would you like to start the application now? (y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "🚀 Starting PDF Accessibility Tool..."
+    echo "🚀 Starting Docubil..."
     npm start
 fi

@@ -146,8 +146,8 @@ class RemediationService {
    */
   _applyMetadataFixes(pdfDoc, metadataIssues, fixedIssues) {
     // Always stamp creator/producer so the tool is identified
-    pdfDoc.setCreator('PDF Accessibility Tool');
-    pdfDoc.setProducer('PDF Accessibility Remediation Service');
+    pdfDoc.setCreator('Docubil');
+    pdfDoc.setProducer('Docubil Accessibility Remediation Service');
     pdfDoc.setModificationDate(new Date());
 
     for (const issue of metadataIssues) {

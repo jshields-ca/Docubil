@@ -1,17 +1,17 @@
 'use strict';
 
 /**
- * OpenAPI 3.0 specification for the PDF Accessibility Tool API.
+ * OpenAPI 3.0 specification for the Docubil API.
  * Served at /api/docs (Swagger UI) and /api/docs.json (raw JSON).
  */
 const spec = {
   openapi: '3.0.3',
   info: {
-    title: 'PDF Accessibility Tool API',
+    title: 'Docubil API',
     version: '0.0.1',
     description:
       'Upload PDF documents, receive WCAG 2.1 AA/AAA accessibility reports, and apply automatic remediations.',
-    license: { name: 'MIT' },
+    license: { name: 'AGPL-3.0-only', url: 'https://www.gnu.org/licenses/agpl-3.0.html' },
   },
   servers: [
     { url: 'http://localhost:3000', description: 'Local development' },

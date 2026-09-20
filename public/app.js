@@ -1,4 +1,4 @@
-// PDF Accessibility Tool - Frontend Application
+// Docubil - Frontend Application
 class PDFAccessibilityApp {
     constructor() {
         this.currentJobId = null;
@@ -404,7 +404,7 @@ function closeModal() {
 
 function showAbout() {
     const content = `
-        <p>The PDF Accessibility Tool helps you evaluate and remediate PDF documents for accessibility compliance according to WCAG standards.</p>
+        <p>Docubil helps you evaluate and remediate PDF documents for accessibility compliance according to WCAG standards.</p>
         <h3>Features:</h3>
         <ul>
             <li>Automated accessibility analysis</li>
@@ -420,7 +420,7 @@ function showAbout() {
             <li>PDF/UA compatibility</li>
         </ul>
     `;
-    showModal('About PDF Accessibility Tool', content);
+    showModal('About Docubil', content);
 }
 
 function showHelp() {
