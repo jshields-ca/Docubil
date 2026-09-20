@@ -4,11 +4,13 @@
  * OpenAPI 3.0 specification for the Docubil API.
  * Served at /api/docs (Swagger UI) and /api/docs.json (raw JSON).
  */
+const { version: APP_VERSION } = require('../package.json');
+
 const spec = {
   openapi: '3.0.3',
   info: {
     title: 'Docubil API',
-    version: '0.0.1',
+    version: APP_VERSION,
     description:
       'Upload PDF documents, receive WCAG 2.1 AA/AAA accessibility reports, and apply automatic remediations.',
     license: { name: 'AGPL-3.0-only', url: 'https://www.gnu.org/licenses/agpl-3.0.html' },
@@ -37,7 +39,7 @@ const spec = {
                   type: 'object',
                   properties: {
                     status: { type: 'string', example: 'ok' },
-                    version: { type: 'string', example: '0.0.1' },
+                    version: { type: 'string', example: APP_VERSION },
                     timestamp: { type: 'string', format: 'date-time' },
                   },
                 },

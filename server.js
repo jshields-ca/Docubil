@@ -14,6 +14,7 @@ const pinoHttp = require('pino-http');
 const swaggerUi = require('swagger-ui-express');
 const { v4: uuidv4, validate: uuidValidate } = require('uuid');
 
+const { version: APP_VERSION } = require('./package.json');
 const logger = require('./src/logger');
 const db = require('./src/db');
 const PDFProcessor = require('./src/services/PDFProcessor');
@@ -168,7 +169,7 @@ app.get('/api/docs.json', (_req, res) => res.json(swaggerSpec));
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', version: '0.0.1', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', version: APP_VERSION, timestamp: new Date().toISOString() });
 });
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
