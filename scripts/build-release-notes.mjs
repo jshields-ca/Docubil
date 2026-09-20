@@ -20,12 +20,16 @@ if (!tag) {
 }
 const version = tag.replace(/^v/, '');
 
+// version comes from a CLI arg (the git tag); escape it fully before
+// interpolating into a RegExp, not just the dots, so it can't inject
+// regex syntax or blow up on unexpected input.
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function extractChangelogSection(version) {
   const changelog = readFileSync('CHANGELOG.md', 'utf8');
-  const headingPattern = new RegExp(
-    `^## \\[${version.replace(/\./g, '\\.')}\\].*$`,
-    'm'
-  );
+  const headingPattern = new RegExp(`^## \\[${escapeRegExp(version)}\\].*$`, 'm');
   const match = headingPattern.exec(changelog);
   if (!match) {
     return `_No CHANGELOG.md entry found for ${version}._`;
