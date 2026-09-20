@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "build": "npm install --prefix client && npm run build --prefix client",
     "test": "jest --testEnvironment=node --forceExit",
     "test:watch": "jest --testEnvironment=node --watch",
     "test:coverage": "jest --testEnvironment=node --coverage --forceExit",

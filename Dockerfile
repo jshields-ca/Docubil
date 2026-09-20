@@ -1,8 +1,21 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Docubil — Docker image
-# Includes Node.js 20 + Python 3.11 for the full analysis pipeline.
+# Multi-stage: builds the React frontend, then a slim Node.js 20 + Python 3.11
+# runtime image for the full analysis pipeline.
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ── Stage 1: frontend build ────────────────────────────────────────────────
+FROM node:20-slim AS frontend-builder
+
+WORKDIR /app
+COPY client/package.json client/package-lock.json* ./client/
+RUN npm ci --prefix client
+
+COPY client ./client
+# vite.config.js builds to ../public, i.e. /app/public
+RUN npm run build --prefix client
+
+# ── Stage 2: runtime ────────────────────────────────────────────────────────
 FROM node:20-slim
 
 # Install Python 3, pip, and build dependencies for native Node modules
@@ -23,14 +36,15 @@ WORKDIR /app
 
 # Install Python dependencies first (layer cache)
 COPY requirements.txt ./
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 # Install Node dependencies
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
-# Copy application source
+# Copy application source (public/ is gitignored -- built output comes from stage 1)
 COPY . .
+COPY --from=frontend-builder /app/public ./public
 
 # Create runtime directories (volumes should be mounted here in production)
 RUN mkdir -p uploads output reports data logs

@@ -19,5 +19,5 @@ module.exports = {
     curly: ['error', 'all'],
     'no-throw-literal': 'error',
   },
-  ignorePatterns: ['node_modules/', 'coverage/', 'public/'],
+  ignorePatterns: ['node_modules/', 'coverage/', 'public/', 'client/'],
 };
