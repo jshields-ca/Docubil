@@ -48,3 +48,31 @@ jobs:
         env:
           NODE_ENV: test
           DB_PATH: ':memory:'
+
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: npm audit (production dependencies, high+ severity)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: pip-audit (Python dependencies)
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
