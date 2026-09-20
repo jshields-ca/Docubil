@@ -223,12 +223,21 @@ const spec = {
           confident: { type: 'boolean', description: 'True when finding is from Python-enhanced analysis' },
         },
       },
+      SeverityBreakdown: {
+        type: 'object',
+        properties: {
+          critical: { type: 'integer' },
+          moderate: { type: 'integer' },
+          minor: { type: 'integer' },
+        },
+      },
       AnalysisResult: {
         type: 'object',
         properties: {
           jobId: { type: 'string', format: 'uuid' },
           status: { type: 'string', example: 'analyzed' },
           issues: { type: 'integer', description: 'Total number of accessibility issues detected' },
+          issuesBySeverity: { $ref: '#/components/schemas/SeverityBreakdown' },
           pythonEnhanced: { type: 'boolean' },
           reportUrl: { type: 'string' },
           remediationUrl: { type: 'string' },
@@ -242,6 +251,29 @@ const spec = {
           originalIssues: { type: 'integer' },
           fixedIssues: { type: 'integer' },
           remainingIssues: { type: 'integer' },
+          remainingBySeverity: { $ref: '#/components/schemas/SeverityBreakdown' },
+          fixedIssuesDetail: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                title: { type: 'string' },
+                fixApplied: { type: 'string' },
+              },
+            },
+          },
+          remainingIssuesDetail: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                title: { type: 'string' },
+                reason: { type: 'string' },
+              },
+            },
+          },
           pythonEnhanced: { type: 'boolean' },
           reportUrl: { type: 'string' },
           downloadUrl: { type: 'string' },
