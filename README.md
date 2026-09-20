@@ -303,16 +303,29 @@ Application logs are written to:
 
 ### Docker Deployment
 
-```dockerfile
-# Example Dockerfile
-FROM node:16-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 3000
-CMD ["npm", "start"]
+**Run a published release — no clone required:**
+
+```bash
+curl -O https://raw.githubusercontent.com/jshields-ca/Docubil/main/docker-compose.release.yml
+docker compose -f docker-compose.release.yml pull
+docker compose -f docker-compose.release.yml up -d
 ```
+
+Every tagged release (`vX.Y.Z`) is published as a multi-arch (amd64/arm64)
+image to [GitHub Container Registry](https://github.com/jshields-ca/Docubil/pkgs/container/docubil).
+See [Releases](https://github.com/jshields-ca/Docubil/releases) for
+version history, or edit the image tag in the compose file to pin a
+specific version instead of `latest`.
+
+**Build from source** (for development or custom builds):
+
+```bash
+git clone https://github.com/jshields-ca/Docubil.git
+cd Docubil
+docker compose up -d --build
+```
+
+See [RELEASING.md](RELEASING.md) if you're cutting a new release.
 
 ## Browser Support
 

@@ -93,6 +93,10 @@ For security vulnerabilities, do **not** open a public issue — see
 - Comment the *why*, not the *what* — code should be readable enough that
   comments explaining what a line does aren't necessary.
 
+## Releasing
+
+Cutting a new version is a maintainer task — see [RELEASING.md](RELEASING.md).
+
 ## Code of Conduct
 
 This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md).
