@@ -1,9 +1,9 @@
 #!/bin/bash
 
-echo "🌟 PDF Accessibility Tool - Demo"
+echo "🌟 Docubil - Demo"
 echo "================================="
 echo ""
-echo "🔧 Starting the PDF Accessibility web application..."
+echo "🔧 Starting the Docubil web application..."
 echo ""
 echo "📋 What this application does:"
 echo "   ✅ Analyzes PDFs for WCAG AA/AAA compliance"

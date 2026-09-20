@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/jshields-ca/Docubil/security/advisories/new
+    about: Please report security vulnerabilities privately — see SECURITY.md, not a public issue.
+  - name: Questions & discussion
+    url: https://github.com/jshields-ca/Docubil/discussions
+    about: For general questions or ideas, use Discussions rather than an issue.

@@ -1,5 +1,5 @@
 {
-  "name": "pdf-accessibility",
+  "name": "docubil",
   "version": "0.0.1",
   "description": "Web application for PDF accessibility evaluation and automatic remediation.",
   "main": "server.js",
@@ -23,14 +23,14 @@
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.1",
     "helmet": "^7.2.0",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.4.0",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "uuid": "^9.0.1"
+    "uuid": "^11.1.1"
   },
   "devDependencies": {
     "commitizen": "^4.0.0",
@@ -65,7 +65,7 @@
   "author": "Jeremy Shields",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jshields-ca/pdf-accessibility.git"
+    "url": "https://github.com/jshields-ca/Docubil.git"
   },
-  "license": "MIT"
+  "license": "AGPL-3.0-only"
 }

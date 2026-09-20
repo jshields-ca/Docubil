@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# PDF Accessibility Tool — Docker image
+# Docubil — Docker image
 # Includes Node.js 20 + Python 3.11 for the full analysis pipeline.
 # ─────────────────────────────────────────────────────────────────────────────
 

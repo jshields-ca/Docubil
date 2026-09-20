@@ -1,14 +1,14 @@
-# PDF Accessibility Tool
+# Docubil
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/jshields-ca/pdf-accessibility/ci.yml?branch=main)](https://github.com/jshields-ca/pdf-accessibility/actions)
-[![License](https://img.shields.io/github/license/jshields-ca/pdf-accessibility)](LICENSE)
-[![Version](https://img.shields.io/github/package-json/v/jshields-ca/pdf-accessibility)](package.json)
-[![Issues](https://img.shields.io/github/issues/jshields-ca/pdf-accessibility)](https://github.com/jshields-ca/pdf-accessibility/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/jshields-ca/pdf-accessibility)](https://github.com/jshields-ca/pdf-accessibility/pulls)
-[![Last Commit](https://img.shields.io/github/last-commit/jshields-ca/pdf-accessibility)](https://github.com/jshields-ca/pdf-accessibility/commits/main)
-[![Contributors](https://img.shields.io/github/contributors/jshields-ca/pdf-accessibility)](https://github.com/jshields-ca/pdf-accessibility/graphs/contributors)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/jshields-ca/Docubil/ci.yml?branch=main)](https://github.com/jshields-ca/Docubil/actions)
+[![License](https://img.shields.io/github/license/jshields-ca/Docubil)](LICENSE)
+[![Version](https://img.shields.io/github/package-json/v/jshields-ca/Docubil)](package.json)
+[![Issues](https://img.shields.io/github/issues/jshields-ca/Docubil)](https://github.com/jshields-ca/Docubil/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/jshields-ca/Docubil)](https://github.com/jshields-ca/Docubil/pulls)
+[![Last Commit](https://img.shields.io/github/last-commit/jshields-ca/Docubil)](https://github.com/jshields-ca/Docubil/commits/main)
+[![Contributors](https://img.shields.io/github/contributors/jshields-ca/Docubil)](https://github.com/jshields-ca/Docubil/graphs/contributors)
 
-A comprehensive web application for evaluating PDF accessibility and automatically remediating common issues according to WCAG AA and AAA standards.
+Docubil brings PDF accessibility to any workspace, community, or use case. It's a comprehensive web application for evaluating PDF accessibility and automatically remediating common issues according to WCAG AA and AAA standards, so everyone has equal access to data, forms, and PDF-based documents.
 
 ---
 
@@ -18,7 +18,7 @@ A comprehensive web application for evaluating PDF accessibility and automatical
 
 ## Project Status
 
-[![Project Status: Active – Maintained and supported](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/jeremyshields/pdf-accessibility)
+[![Project Status: Active – Maintained and supported](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/jshields-ca/Docubil)
 
 - **Current version:** 0.0.1 (initial/alpha release)
 - This project is actively maintained. Contributions, bug reports, and feature requests are welcome!
@@ -71,8 +71,8 @@ A comprehensive web application for evaluating PDF accessibility and automatical
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd pdf-accessibility-app
+   git clone https://github.com/jshields-ca/Docubil.git
+   cd Docubil
    ```
 2. **Install Node.js dependencies**
    ```bash
@@ -142,7 +142,7 @@ GET /api/status/:jobId
 ## Architecture
 
 ```
-pdf-accessibility-app/
+Docubil/
 ├── server.js                 # Express server
 ├── package.json              # Node.js dependencies
 ├── requirements.txt          # Python dependencies
@@ -273,7 +273,7 @@ Application logs are written to:
    ```bash
    # Using PM2
    npm install -g pm2
-   pm2 start server.js --name pdf-accessibility-tool
+   pm2 start server.js --name docubil
    ```
 3. **Reverse Proxy**
    Configure nginx or Apache to proxy requests to the Node.js server.
@@ -310,13 +310,17 @@ CMD ["npm", "start"]
 
 ## Community & Support
 
-- [Open an issue](https://github.com/jeremyshields/pdf-accessibility/issues) for bugs or feature requests
-- [Discussions](https://github.com/jeremyshields/pdf-accessibility/discussions) for Q&A and ideas
+- [Open an issue](https://github.com/jshields-ca/Docubil/issues) for bugs or feature requests
+- [Discussions](https://github.com/jshields-ca/Docubil/discussions) for Q&A and ideas
 - [Changelog](CHANGELOG.md) for release history
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+GNU Affero General Public License v3.0 (AGPL-3.0) - see [LICENSE](LICENSE) for details.
+
+Docubil is copyleft software: if you run a modified version of Docubil as a
+network service, you must make your modified source available to its users.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for what this means for contributors.
 
 ---
 

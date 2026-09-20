@@ -596,7 +596,7 @@ if (require.main === module) {
     .then(() => {
       scheduleCleanup();
       app.listen(PORT, () => {
-        logger.info({ port: PORT }, 'PDF Accessibility Tool running');
+        logger.info({ port: PORT }, 'Docubil running');
       });
     })
     .catch((err) => {

@@ -3,7 +3,7 @@ version: '3.9'
 services:
   app:
     build: .
-    container_name: pdf-accessibility
+    container_name: docubil
     restart: unless-stopped
     ports:
       - '3000:3000'
