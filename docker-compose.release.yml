@@ -1,0 +1,48 @@
+# Run Docubil from a published release image -- no git clone required.
+#
+#   curl -O https://raw.githubusercontent.com/jshields-ca/Docubil/main/docker-compose.release.yml
+#   docker compose -f docker-compose.release.yml pull
+#   docker compose -f docker-compose.release.yml up -d
+#
+# Then open http://localhost:3000
+#
+# To pin a specific version instead of the latest release, change the
+# image tag below to e.g. ghcr.io/jshields-ca/docubil:1.2.0 -- see
+# https://github.com/jshields-ca/Docubil/releases for available versions.
+
+services:
+  app:
+    image: ghcr.io/jshields-ca/docubil:latest
+    container_name: docubil
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # ALLOWED_ORIGINS: 'https://yourdomain.com'
+      PYTHON_PATH: python3
+      PYTHON_TIMEOUT_MS: 60000
+      MAX_FILE_SIZE: 52428800
+      UPLOAD_DIR: /data/uploads
+      OUTPUT_DIR: /data/output
+      REPORTS_DIR: /data/reports
+      DB_PATH: /data/jobs.json
+      LOG_LEVEL: info
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+      CLEANUP_INTERVAL_HOURS: 1
+      FILE_RETENTION_HOURS: 24
+    volumes:
+      - pdf_data:/data
+    healthcheck:
+      test: ['CMD', 'node', '-e',
+        "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  pdf_data:
+    driver: local

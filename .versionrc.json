@@ -1,0 +1,16 @@
+{
+  "types": [
+    { "type": "feat", "section": "Added" },
+    { "type": "fix", "section": "Fixed" },
+    { "type": "perf", "section": "Changed" },
+    { "type": "revert", "section": "Changed" },
+    { "type": "refactor", "section": "Changed" },
+    { "type": "security", "section": "Security" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "ci", "section": "Maintenance" },
+    { "type": "build", "section": "Maintenance" },
+    { "type": "chore", "section": "Maintenance" },
+    { "type": "style", "hidden": true },
+    { "type": "test", "hidden": true }
+  ]
+}
