@@ -111,6 +111,19 @@ function requireValidJobId(req, res, next) {
   next();
 }
 
+// The UI needs a real critical/moderate/minor split, not a guess based on
+// the total count.
+function countBySeverity(issues) {
+  return issues.reduce(
+    (counts, issue) => {
+      const key = counts[issue.severity] !== undefined ? issue.severity : 'minor';
+      counts[key] += 1;
+      return counts;
+    },
+    { critical: 0, moderate: 0, minor: 0 }
+  );
+}
+
 // ─── File upload (multer) ─────────────────────────────────────────────────────
 const storage = multer.diskStorage({
   destination: async (_req, _file, cb) => {
@@ -249,6 +262,7 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
       jobId,
       status: 'analyzed',
       issues: issues.length,
+      issuesBySeverity: countBySeverity(issues),
       pythonEnhanced,
       reportUrl: `/reports/${jobId}-report.html`,
       remediationUrl: `/api/remediate/${jobId}`,
@@ -347,6 +361,17 @@ app.post('/api/remediate/:jobId', requireValidJobId, async (req, res) => {
       originalIssues: issues.length,
       fixedIssues: remediationResult.fixedIssues.length,
       remainingIssues: remediationResult.remainingIssues.length,
+      remainingBySeverity: countBySeverity(remediationResult.remainingIssues),
+      fixedIssuesDetail: remediationResult.fixedIssues.map((issue) => ({
+        id: issue.id,
+        title: issue.title,
+        fixApplied: issue.fixApplied,
+      })),
+      remainingIssuesDetail: remediationResult.remainingIssues.map((issue) => ({
+        id: issue.id,
+        title: issue.title,
+        reason: issue.reason,
+      })),
       pythonEnhanced,
       reportUrl: `/reports/${jobId}-report.html`,
       downloadUrl: `/api/download/${jobId}`,

@@ -53,6 +53,18 @@ describe('POST /api/analyze', () => {
     expect(res.body).toHaveProperty('reportUrl');
     expect(res.body).toHaveProperty('remediationUrl');
     expect(res.body).toHaveProperty('pythonEnhanced');
+
+    const { issuesBySeverity } = res.body;
+    expect(issuesBySeverity).toEqual(
+      expect.objectContaining({
+        critical: expect.any(Number),
+        moderate: expect.any(Number),
+        minor: expect.any(Number),
+      })
+    );
+    expect(issuesBySeverity.critical + issuesBySeverity.moderate + issuesBySeverity.minor).toBe(
+      res.body.issues
+    );
   });
 
   it('analyses a PDF missing a title and detects metadata-001', async () => {
@@ -210,6 +222,14 @@ describe('POST /api/remediate/:jobId', () => {
     expect(remRes.body.fixedIssues).toBeGreaterThanOrEqual(0);
     expect(remRes.body).toHaveProperty('downloadUrl');
     expect(remRes.body).toHaveProperty('reportUrl');
+    expect(remRes.body).toHaveProperty('remainingBySeverity');
+    const { remainingBySeverity } = remRes.body;
+    expect(
+      remainingBySeverity.critical + remainingBySeverity.moderate + remainingBySeverity.minor
+    ).toBe(remRes.body.remainingIssues);
+
+    expect(remRes.body.fixedIssuesDetail).toHaveLength(remRes.body.fixedIssues);
+    expect(remRes.body.remainingIssuesDetail).toHaveLength(remRes.body.remainingIssues);
   });
 });
 
