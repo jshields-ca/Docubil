@@ -69,7 +69,7 @@ class ReportGenerator {
 
     } catch (error) {
       logger.error({ err: error.message }, 'Error generating report');
-      throw new Error(`Failed to generate report: ${error.message}`);
+      throw new Error(`Failed to generate report: ${error.message}`, { cause: error });
     }
   }
 

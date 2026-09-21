@@ -45,7 +45,7 @@ function runScript(scriptName, args = []) {
       }
       try {
         resolve(JSON.parse(stdout.trim()));
-      } catch (_) {
+      } catch {
         reject(new Error(`Failed to parse Python output: ${stdout.slice(0, 300)}`));
       }
     });
