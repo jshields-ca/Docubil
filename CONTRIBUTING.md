@@ -31,7 +31,8 @@ submitting a PR.
 
 ### Prerequisites
 
-- Node.js 20+ and npm
+- Node.js 24+ and npm (see `engines` in `package.json`; CI and the Docker
+  image both run on Node 24)
 - Python 3.11+ (for the accessibility analysis/remediation engine)
 - Git
 
@@ -46,7 +47,22 @@ cp .env.example .env
 npm run dev
 ```
 
-Open http://localhost:3000.
+That starts the backend on http://localhost:3000, but `public/` (the
+built frontend) is generated output and isn't tracked in git, so a fresh
+clone has no UI to serve yet. For frontend work, run the frontend dev
+server alongside the backend in a second terminal instead — it proxies
+API calls to the backend with hot reload:
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Open the URL Vite prints (typically http://localhost:5173). See
+[`client/README.md`](client/README.md) for frontend-specific details. If
+you only need a built UI (not editing the frontend), `npm run build` from
+the repo root builds it into `public/` once.
 
 ### Running checks locally
 
@@ -55,6 +71,16 @@ npm run lint       # ESLint
 npm run format     # Prettier
 npm test           # Jest test suite
 npm run test:coverage
+```
+
+If you touched `client/`, run its checks too (includes `jest-axe`
+accessibility assertions on every component):
+
+```bash
+cd client
+npm run lint
+npm test
+npm run build      # confirms the production build still succeeds
 ```
 
 All of these run in CI on every pull request — please run them locally

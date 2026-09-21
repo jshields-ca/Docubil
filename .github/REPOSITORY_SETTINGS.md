@@ -13,6 +13,8 @@ this repo can't configure them). This is Phase 2 of `PLAN.md`.
   to be up to date. Select these checks once they've run at least once:
   - `test` (from `ci.yml`)
   - `security` (from `ci.yml`)
+  - `frontend` (from `ci.yml`)
+  - `docker` (from `ci.yml`, build-validation only — never pushes an image)
   - `Analyze (javascript-typescript)` / `Analyze (python)` (from `codeql.yml`)
 - **Require conversation resolution before merging.**
 - Do **not** allow force pushes or branch deletion on `main`.

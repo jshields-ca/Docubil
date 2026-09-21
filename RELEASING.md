@@ -59,33 +59,29 @@ this — see [CONTRIBUTING.md](CONTRIBUTING.md) instead.
    docker compose -f docker-compose.release.yml up -d
    ```
 
-## The first release needs a manual step
+## How the first release (v0.1.0) was cut
+
+This is historical context, not something you need to do again — the
+normal `npm run release` flow above is the current path for every
+release from `v0.1.1` onward.
 
 `npm run release` generates its changelog section entirely from commit
 messages since the last tag — it can't see anything written by hand.
-This repo currently has an `## [Unreleased]` section in `CHANGELOG.md`
+When `v0.1.0` was cut, `CHANGELOG.md` had an `## [Unreleased]` section
 written by hand (covering the Docubil rebrand, relicense, and frontend
-rebuild, none of which are individually visible to the auto-generator
+rebuild, none of which were individually visible to the auto-generator
 since those PRs were squash-merged before PR titles were required to be
-conventional). Running `npm run release` as-is **would silently delete
-that section** and replace it with a near-empty one.
+conventional). Running `npm run release` as-is would have silently
+deleted that section and replaced it with a near-empty one, so a manual
+procedure was used instead: rename `## [Unreleased]` to
+`## [0.1.0] - 2026-09-20`, bump the version with
+`npm version 0.1.0 --no-git-tag-version`, commit, tag, and push.
 
-For the **first** tagged release, do this instead of the automated
-`npm run release` flow:
-
-1. Decide the version number (this is a product call — is this a 1.0.0
-   given it's a full public relaunch, or 0.1.0 since the project is
-   still young? Your call).
-2. Rename `## [Unreleased]` in `CHANGELOG.md` to `## [X.Y.Z] - YYYY-MM-DD`.
-3. Bump the version without creating a tag: `npm version X.Y.Z --no-git-tag-version`
-   (updates `package.json`/`package-lock.json` only).
-4. Commit: `git commit -am "chore(release): X.Y.Z"`.
-5. Tag manually: `git tag vX.Y.Z`.
-6. Push: `git push --follow-tags origin main`.
-
-From that point on, once every PR carries a conventional title before
-squash-merging (see the PR template checklist), `npm run release` works
-as designed for every subsequent release.
+That workaround was only needed because of pre-existing non-conventional
+PR titles from before this convention was enforced. Since every PR now
+carries a conventional title before squash-merging (see the PR template
+checklist), `npm run release` works as designed for every release going
+forward — no manual CHANGELOG surgery needed.
 
 ## First-time setup
 
