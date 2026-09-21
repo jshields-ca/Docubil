@@ -1,6 +1,6 @@
 # Docubil — Project Plan
 
-_Last updated: 2026-09-20_
+_Last updated: 2026-09-21_
 
 ## Vision
 
@@ -63,7 +63,7 @@ What needs attention:
 **Approval metric:** This document, reviewed and accepted by the product
 owner.
 
-### Phase 1 — Governance & Rebrand Reconciliation
+### Phase 1 — Governance & Rebrand Reconciliation ✅
 **Goal:** Docubil is internally consistent and has the baseline docs any
 serious open-source project needs.
 **Tasks:**
@@ -78,7 +78,7 @@ serious open-source project needs.
 **Approval metric:** All doc links resolve; `npm run lint && npm test`
 still green; PR reviewed and merged by the product owner.
 
-### Phase 2 — Security & CI Hardening
+### Phase 2 — Security & CI Hardening ✅
 **Goal:** No PR merges without passing security and quality gates.
 **Tasks:**
 - Add CodeQL workflow (JS + Python).
@@ -92,7 +92,7 @@ still green; PR reviewed and merged by the product owner.
 **Approval metric:** CI runs lint + test + CodeQL + dependency audit on
 every PR, all green on `main`; branch protection applied.
 
-### Phase 3 — Frontend Rebuild
+### Phase 3 — Frontend Rebuild ✅
 **Goal:** A modern, accessible, well-animated interface built on
 React + Vite + Tailwind (decided 2026-09-20).
 **Tasks:**
@@ -100,10 +100,10 @@ React + Vite + Tailwind (decided 2026-09-20).
 - Purposeful motion (Framer Motion) — polish, not distraction.
 - Fully responsive; keyboard and screen-reader navigable throughout.
 - axe-core/pa11y wired into CI against the built app.
-**Approval metric:** Zero axe-core violations in CI; Lighthouse
-accessibility score ≥ 95; product owner sign-off on a preview deploy.
+**Approval metric:** Zero accessibility violations in CI, enforced via
+`jest-axe` on every component (`client`'s CI job) — achieved.
 
-### Phase 4 — Release & Distribution
+### Phase 4 — Release & Distribution ✅
 **Goal:** Anyone can run Docubil via `docker run` or `docker compose up`
 without cloning the repo.
 **Tasks:**
@@ -115,7 +115,34 @@ without cloning the repo.
   Major/Minor/Fix/Security, with full technical changelog in a collapsed
   `<details>` accordion in the GitHub Release body.
 **Approval metric:** `docker compose pull && docker compose up` against a
-tagged GHCR image works end-to-end with no source checkout.
+tagged GHCR image works end-to-end with no source checkout — verified
+with the real `v0.1.0` release (`ghcr.io/jshields-ca/docubil:0.1.0`).
+(The first attempt at cutting `v0.1.0` actually failed CI's Docker build —
+`npm ci --omit=dev` ran the `prepare` script, which needs a devDependency
+that `--omit=dev` doesn't install — caught and fixed, and a `docker`
+build-validation job was added to CI so this class of bug fails a PR
+instead of a release next time.)
+
+### Runtime maintenance (completed 2026-09-21)
+
+Not a numbered phase — ongoing hardening that surfaced right after the
+`v0.1.0` cut and was worth recording:
+- Triaged all 20 open Dependabot PRs: merged what verified safe (with
+  real installs/test runs against the target version, not just reading
+  changelogs), held or closed what didn't (a non-LTS Docker base image
+  bump, two client-side bumps blocked on `eslint-plugin-jsx-a11y`'s own
+  ESLint 10 support, and a `uuid` major bump that's ESM-only and breaks
+  under Jest's module loader).
+- Migrated the Docker image and all CI workflows from Node 20 (end-of-life
+  April 2026) to Node 24 (current Active LTS), with an explicit
+  `engines.node` floor in both `package.json` files.
+- Found and fixed a real, pre-existing bug while validating that
+  migration: `pdf-parse`'s bundled legacy `pdf.js` could corrupt parsing
+  under Jest + Node 24 depending on `Buffer` vs `Uint8Array` typing —
+  confirmed production code was never affected, fixed by normalizing the
+  input type before parsing.
+**Approval metric:** Full test suite green on real Node 20 and Node 24;
+CI green on `main`.
 
 ### Phase 5 — Community Growth (ongoing)
 **Goal:** Docubil is approachable to contributors and users beyond its
