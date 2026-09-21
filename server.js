@@ -552,7 +552,6 @@ function csvEscape(value) {
 }
 
 // ─── Global error handler ─────────────────────────────────────────────────────
-// eslint-disable-next-line no-unused-vars
 app.use((error, _req, res, _next) => {
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {

@@ -20,7 +20,7 @@ class PDFProcessor {
       pdfDoc = await PDFDocument.load(dataBuffer, { ignoreEncryption: true });
     } catch (error) {
       logger.error({ err: error.message, filePath }, 'pdf-lib failed to load PDF');
-      throw new Error(`Failed to extract PDF information: ${error.message}`);
+      throw new Error(`Failed to extract PDF information: ${error.message}`, { cause: error });
     }
 
     const pages = pdfDoc.getPages();
@@ -93,7 +93,7 @@ class PDFProcessor {
           type: field.constructor.name,
         })),
       };
-    } catch (_) {
+    } catch {
       return { hasForm: false, fieldCount: 0, fields: [] };
     }
   }

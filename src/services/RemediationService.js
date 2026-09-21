@@ -54,7 +54,7 @@ class RemediationService {
       pdfBytes = await pdfDoc.save();
     } catch (err) {
       logger.error({ err: err.message }, 'pdf-lib metadata pass failed');
-      throw new Error(`Metadata remediation failed: ${err.message}`);
+      throw new Error(`Metadata remediation failed: ${err.message}`, { cause: err });
     }
 
     // Write the metadata-fixed PDF to the output path so Python can read it
