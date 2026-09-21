@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Web application for PDF accessibility evaluation and automatic remediation.",
   "main": "server.js",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
