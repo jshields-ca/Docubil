@@ -39,7 +39,7 @@
     "eslint": "^8.0.0",
     "husky": "^8.0.0",
     "jest": "^30.5.1",
-    "lint-staged": "^15.0.0",
+    "lint-staged": "^17.5.1",
     "pino-pretty": "^13.0.0",
     "prettier": "^3.9.8",
     "standard-version": "^9.0.0",
