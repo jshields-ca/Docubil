@@ -38,9 +38,11 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
-# Install Node dependencies
+# Install Node dependencies. --ignore-scripts: this is a production install,
+# and the only lifecycle script (`prepare`) sets up husky git hooks, a
+# devDependency that isn't installed here -- running it fails the build.
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copy application source (public/ is gitignored -- built output comes from stage 1)
 COPY . .
