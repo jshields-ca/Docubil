@@ -37,7 +37,7 @@
     "commitizen": "^4.0.0",
     "cz-git": "^1.14.0",
     "eslint": "^8.0.0",
-    "husky": "^8.0.0",
+    "husky": "^9.1.7",
     "jest": "^30.5.1",
     "lint-staged": "^15.0.0",
     "pino-pretty": "^13.0.0",
