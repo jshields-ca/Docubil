@@ -20,7 +20,7 @@ Docubil brings PDF accessibility to any workspace, community, or use case. It's 
 
 [![Project Status: Active – Maintained and supported](https://img.shields.io/badge/status-active-brightgreen.svg)](https://github.com/jshields-ca/Docubil)
 
-- **Current version:** 0.0.1 (initial/alpha release)
+- **Current version:** 0.1.0
 - This project is actively maintained. Contributions, bug reports, and feature requests are welcome!
 - Expect rapid changes and improvements as the project matures.
 
