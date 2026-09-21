@@ -52,10 +52,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Build release notes
         run: node scripts/build-release-notes.mjs "$GITHUB_REF_NAME" > /tmp/release-notes.md

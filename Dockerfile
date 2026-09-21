@@ -1,11 +1,11 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Docubil — Docker image
-# Multi-stage: builds the React frontend, then a slim Node.js 20 + Python 3.11
+# Multi-stage: builds the React frontend, then a slim Node.js 24 + Python 3.11
 # runtime image for the full analysis pipeline.
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Stage 1: frontend build ────────────────────────────────────────────────
-FROM node:20-slim AS frontend-builder
+FROM node:24-slim AS frontend-builder
 
 WORKDIR /app
 COPY client/package.json client/package-lock.json* ./client/
@@ -16,7 +16,7 @@ COPY client ./client
 RUN npm run build --prefix client
 
 # ── Stage 2: runtime ────────────────────────────────────────────────────────
-FROM node:20-slim
+FROM node:24-slim
 
 # Install Python 3, pip, and build dependencies for native Node modules
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -28,9 +28,14 @@ class PDFProcessor {
     // Attempt text + metadata extraction via pdf-parse.
     // pdf-parse uses an older pdf.js engine that may fail on some compression
     // variants — fall back gracefully to pdf-lib getters when that happens.
+    // Pass a plain Uint8Array rather than the Buffer subclass: pdf-parse's
+    // bundled pdf.js does a strict type check that a Buffer instance can
+    // fail depending on the JS runtime/module loader (observed under Jest
+    // on Node 24, though not under plain Node), corrupting parsing with a
+    // spurious "bad XRef entry" even for a well-formed PDF.
     let pdfData = null;
     try {
-      pdfData = await pdfParse(dataBuffer);
+      pdfData = await pdfParse(new Uint8Array(dataBuffer));
     } catch (err) {
       logger.warn(
         { err: err.message, filePath },
