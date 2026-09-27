@@ -61,7 +61,7 @@ jobs:
         run: node scripts/build-release-notes.mjs "$GITHUB_REF_NAME" > /tmp/release-notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: /tmp/release-notes.md
           generate_release_notes: false
