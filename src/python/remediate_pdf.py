@@ -36,7 +36,9 @@ def remediate(input_path, output_path, fixes):
         return result
 
     try:
-        with pikepdf.open(input_path, allow_overwriting_input=False) as pdf:
+        # RemediationService fixes the file in place (input and output are the
+        # same path), so pikepdf must be allowed to save over what it opened.
+        with pikepdf.open(input_path, allow_overwriting_input=True) as pdf:
 
             # -- Set document language --
             if fixes.get("setLanguage"):
