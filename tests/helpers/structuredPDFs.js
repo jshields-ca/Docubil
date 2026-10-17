@@ -4,7 +4,7 @@
  * PDFs with the structures the accuracy checks care about, built with
  * pdf-lib's low-level API so the tests need no binary fixtures.
  */
-const { PDFDocument, PDFName, PDFString, StandardFonts } = require('pdf-lib');
+const { PDFDocument, PDFName, PDFString, StandardFonts, rgb } = require('pdf-lib');
 
 // A 1×1 grey PNG.
 const PNG_1PX = Buffer.from(
@@ -65,4 +65,35 @@ async function createUntaggedImagePDF({ heading = 'Quarterly Water Quality Repor
   return Buffer.from(await pdfDoc.save());
 }
 
-module.exports = { createNestedFormPDF, createTaggedFigurePDF, createUntaggedImagePDF };
+/**
+ * An untagged text document: optional title metadata, an optional large
+ * heading, body text in a given grey level (0 = black), over several pages.
+ */
+async function createTextPDF({ title, heading, body = '', grey = 0, pages = 1 } = {}) {
+  const pdfDoc = await PDFDocument.create();
+  if (title) {
+    pdfDoc.setTitle(title);
+  }
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const lines = body.match(/.{1,90}(\s|$)/g) || [];
+  for (let p = 0; p < pages; p++) {
+    const page = pdfDoc.addPage([612, 792]);
+    let y = 740;
+    if (heading && p === 0) {
+      page.drawText(heading, { x: 50, y, size: 24, font });
+      y -= 40;
+    }
+    for (const line of lines) {
+      page.drawText(line.trim(), { x: 50, y, size: 11, font, color: rgb(grey, grey, grey) });
+      y -= 16;
+    }
+  }
+  return Buffer.from(await pdfDoc.save());
+}
+
+module.exports = {
+  createNestedFormPDF,
+  createTaggedFigurePDF,
+  createTextPDF,
+  createUntaggedImagePDF,
+};

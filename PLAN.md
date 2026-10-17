@@ -38,7 +38,7 @@ criteria gets re-scoped here, in the open, rather than quietly declared done.
 |---|---|---|
 | 0–4 | Audit, governance, CI hardening, frontend rebuild, GHCR releases | ✅ Done (v0.1.0) |
 | 5 | Project foundations refresh | 🟡 In review |
-| 6 | Accuracy baseline | ⏭️ Next |
+| 6 | Accuracy baseline | 🟡 Defects fixed, corpus started (13/~30) |
 | 7 | Browser-first core and installable app | Planned |
 | 8 | Free public site | Planned, D-010 proposed |
 | 9 | Windows desktop build | Conditional |
@@ -100,9 +100,15 @@ that produces readable notes.
 - The [browser-first spike](docs/spikes/browser-first.md) and its findings.
 - Docs sweep: README, CONTRIBUTING, RELEASING, SECURITY in line with all of
   the above. `.env` untracked.
-- Dependency triage: 16 Dependabot PRs resolved (13 merged including Express
-  5, 3 closed with reasons recorded on each PR); Dependabot ignore rules for
-  the blocked ones.
+- Dependency triage: 16 Dependabot PRs resolved. 12 were merged (including
+  Express 5, which also cleared a critical `proxy-addr` advisory that had
+  turned `main` red), pino 10 was taken into this branch from #43, and 3 were
+  closed with the reason recorded on each PR. Dependabot ignore rules cover
+  the closed ones.
+- Bugs found along the way and fixed with tests: reports unreachable and
+  never cleaned up in Docker (`REPORTS_DIR` ignored); Python fixes never
+  saved into the downloaded PDF; PDF-derived text unescaped in the HTML
+  report; a single shared rate limit behind reverse proxies (#58).
 
 **Scope, out:** any change to analysis or remediation behaviour (Phase 6).
 
@@ -152,6 +158,15 @@ good).
 - Swap `pdf-lib` for `@cantoo/pdf-lib` (D-011, if accepted).
 
 **Scope, out:** new checks, UI changes, architecture changes.
+
+**Progress (2026-10-17):** the seven defects are fixed with regression tests
+(#51–#56; defect 6 by `tests/python/accuracy.test.js`). The corpus runner is
+in place (`npm run corpus`, part of `npm test`) with 13 documents across 9
+checks, and all of them currently pass: zero false positives or negatives.
+The same corpus against the pre-fix code had 2 false positives and at least
+18 remediation failures. Remaining: grow the corpus to about 30 documents
+(gaps listed in `tests/corpus/README.md`), and `pdf-lib` → `@cantoo/pdf-lib`
+once D-011 is decided.
 
 **Success criteria:**
 1. `npm run corpus` runs in CI on every PR and fails if any check's accuracy
