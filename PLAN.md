@@ -198,9 +198,10 @@ once D-011 is decided.
 Docubil can be installed and used offline without admin rights (D-009).
 
 **Scope, in:**
-- **7.1 Close the spike's open questions:** behaviour on signed and encrypted
-  PDFs (warn before a rewrite invalidates a signature), whole-process memory
-  under a 4 GB limit, and scanned image-heavy files. _Partly answered:_ the
+- **7.1 Close the spike's open questions:** whole-process memory under a
+  4 GB limit, and scanned image-heavy files. (Signed and encrypted PDFs are
+  settled: they're analyzed but never rewritten, as the server now does, and
+  the browser core must keep that rule.) _Partly answered:_ the
   whole app is about 0.9 MB gzipped, `@cantoo/pdf-lib` included; a 200-page, 50 MB PDF analyzes
   and remediates in Chromium in 4.6 s (9.8 s with the CPU throttled 4×), and
   pdf.js's **legacy** build is required, because the modern build fails on
