@@ -5,6 +5,8 @@ form-field hierarchy and structure tree with pikepdf.
 
 import re
 
+import pikepdf
+
 # Guards against malformed files with very deep or cyclic trees.
 MAX_DEPTH = 64
 MAX_NODES = 20000
@@ -54,7 +56,12 @@ def iter_terminal_fields(acroform):
         partial = _text(node.get("/T"))
         name = ".".join(p for p in (prefix, partial) if p)
         kids = node.get("/Kids")
-        child_fields = [k for k in kids if "/T" in k] if kids is not None else []
+        # Malformed files can hold nulls or non-dictionaries here; skip them
+        # rather than lose every other field.
+        child_fields = [
+            k for k in (kids if kids is not None else [])
+            if isinstance(k, pikepdf.Dictionary) and "/T" in k
+        ]
         if not child_fields:
             yield name, node
             return
@@ -62,7 +69,8 @@ def iter_terminal_fields(acroform):
             yield from walk(kid, name, depth + 1)
 
     for field in acroform.get("/Fields", []):
-        yield from walk(field, "", 0)
+        if isinstance(field, pikepdf.Dictionary):
+            yield from walk(field, "", 0)
 
 
 def has_tooltip(field):
@@ -73,12 +81,13 @@ def human_label(full_name):
     """
     A tooltip derived from a field's own name, or None when the name is an
     internal identifier that would mean nothing read aloud ("p1-t3[0]",
-    "Text12"). "FirstName" and "date_of_birth" become "First name" and
-    "Date of birth".
+    "Text12"). "FirstName", "date_of_birth" and "ZIPCode" become
+    "First name", "Date of birth" and "ZIP code"; acronyms stay upper-case.
     """
     last = full_name.split(".")[-1]
     last = re.sub(r"\[\d+\]$", "", last)
     words = re.sub(r"([a-z])([A-Z])", r"\1 \2", last)
+    words = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", words)  # "ZIPCode" -> "ZIP Code"
     words = re.sub(r"[_\-]+", " ", words).strip()
     tokens = words.split()
     if not tokens or GENERIC_NAME.match(words):
@@ -87,7 +96,8 @@ def human_label(full_name):
         return None
     if max(len(t) for t in tokens) < 3:
         return None
-    label = " ".join(tokens).lower()
+    # Keep acronyms ("SSN", "ZIP") as written; lower-case everything else.
+    label = " ".join(t if t.isupper() and len(t) > 1 else t.lower() for t in tokens)
     return label[0].upper() + label[1:]
 
 
@@ -129,8 +139,6 @@ def collect_figures(pdf):
             else:
                 break
         return role
-
-    import pikepdf
 
     def walk(node, page, depth):
         if depth > MAX_DEPTH or len(seen) > MAX_NODES:
