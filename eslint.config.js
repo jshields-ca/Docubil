@@ -4,7 +4,7 @@ const js = require('@eslint/js');
 const globals = require('globals');
 
 module.exports = [
-  { ignores: ['node_modules/', 'coverage/', 'public/', 'client/'] },
+  { ignores: ['node_modules/', 'coverage/', 'public/', 'client/', 'docs/spikes/'] },
   js.configs.recommended,
   {
     languageOptions: {

@@ -1,24 +1,15 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to Docubil are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+While the major version is `0`, breaking changes may still land in minor
+releases.
 
-## [Unreleased]
-
-### Changed
-- Migrated the Docker image and all CI workflows from Node 20 (end-of-life April 2026) to Node 24 (current Active LTS), with an explicit `engines.node` floor in both `package.json` files.
-- Routine dependency maintenance: bumped `helmet`, `express-rate-limit`, `pino-http`, `dotenv`, `jest`, `husky`, `lint-staged`, `pikepdf`, and several `client/` and GitHub Actions dependencies to their latest compatible major versions (each verified against real installs/test runs, not just changelogs, before merging).
-
-### Fixed
-- `PDFProcessor`'s text extraction (`pdf-parse`) could intermittently fail with a spurious "bad XRef entry" on a well-formed PDF, depending on the JS engine/module loader's handling of `Buffer` vs. `Uint8Array` — fixed by normalizing the input type before parsing.
-- The `v0.1.0` Docker image build failed on its first cut: `npm ci --omit=dev` runs the `prepare` script regardless of `--omit=dev`, and `husky` (a devDependency) wasn't installed to satisfy it. Fixed, and re-cut successfully.
-
-### Added
-- A `docker` CI job that builds the image on every pull request (validation only, never pushed) so a broken Dockerfile fails a PR instead of a release.
-
-### Documentation
-- Updated `README.md`, `CONTRIBUTING.md`, `RELEASING.md`, `PLAN.md`, and `.github/REPOSITORY_SETTINGS.md` to reflect the Node 24 migration, the actual `v0.1.0` release history, and gaps found in a documentation audit.
+Releases are cut with [Changesets](https://github.com/changesets/changesets);
+see `CONTRIBUTING.md` for how to add a changeset to a PR, and `RELEASING.md`
+for how a release is made.
 
 ## [0.1.0] - 2026-09-20
 

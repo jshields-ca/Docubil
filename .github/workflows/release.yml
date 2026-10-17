@@ -1,16 +1,130 @@
 name: Release
 
+# Mirrors LatestArr's release flow (DECISIONS.md, D-008):
+#
+# 1. While changesets are pending on main, keep a "Version Packages" PR up
+#    to date. It carries the version bump and the new CHANGELOG.md entry
+#    written by scripts/write-changelog.mjs.
+# 2. A maintainer writes .github/release-highlights/vX.Y.Z.md on that PR
+#    (the CI "Release highlights" check stays red until they do), then
+#    merges it.
+# 3. That merge is a push to main with no pending changesets and an
+#    untagged version, so this workflow publishes the image, then the tag
+#    and GitHub Release (notes built by scripts/build-release-notes.mjs).
+#
+# The image is pushed before the release is created, so a Release never
+# points people at an image that failed to build.
+
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
+  pull-requests: write
   packages: write
 
 jobs:
-  build-and-push:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      is_new: ${{ steps.check_version.outputs.is_new }}
+      version: ${{ steps.check_version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      # --ignore-scripts: only the changesets CLI is needed here, not the
+      # husky `prepare` hook.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      # GITHUB_TOKEN as an env var is what scripts/write-changelog.mjs uses
+      # to link each changeset to its PR. Without it the links are simply
+      # left out; the release itself doesn't depend on them.
+      - name: Create/update Version Packages PR
+        id: changesets
+        uses: changesets/action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version-script: npm run version-packages
+          commit-message: 'chore: version packages'
+          pr-title: 'chore: version packages'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # changesets/action sets pr-number whenever it opens or updates the
+      # PR. The one push where it doesn't is the push that merged that PR,
+      # which is exactly the push that should become a release.
+      - name: Check whether this push cut a new, untagged version
+        id: check_version
+        if: steps.changesets.outputs.pr-number == ''
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "is_new=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_new=true" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      # One sticky comment on the Version Packages PR, updated in place on
+      # every push, so writing highlights is a visible step before merging.
+      # changesets/action rebuilds the PR branch from main on every push,
+      # so highlights committed to it are lost if another PR merges first;
+      # this comment and the red check come back when that happens.
+      - name: Remind the maintainer to write release highlights
+        if: steps.changesets.outputs.pr-number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.changesets.outputs.pr-number }}
+          REPO: ${{ github.repository }}
+        run: |
+          git fetch --quiet origin changeset-release/main
+          VERSION=$(git show origin/changeset-release/main:package.json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).version))')
+          FILE=".github/release-highlights/v$VERSION.md"
+          MARKER="<!-- release-highlights-reminder -->"
+          EXISTING=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" \
+            --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" | head -n1)
+
+          if git cat-file -e "origin/changeset-release/main:$FILE" 2>/dev/null; then
+            BODY="$MARKER
+          ✅ Release highlights for **v$VERSION** are in \`$FILE\`."
+          else
+            TEMPLATE=$(cat .github/release-highlights/TEMPLATE.md)
+            LINK="https://github.com/$REPO/new/changeset-release/main/.github/release-highlights?filename=v$VERSION.md&value=$(jq -rn --arg v "$TEMPLATE" '$v|@uri')"
+            BODY="$MARKER
+          ### ✍️ Write the release highlights before merging
+
+          This PR will release **v$VERSION**. Add a short summary for the top of the GitHub Release: a one-line theme, then the few changes that matter most, in plain language.
+
+          **[Write the highlights for v$VERSION]($LINK)** (opens the GitHub editor with a template, committed to this PR's branch)
+
+          The **Release highlights** check stays red until the file exists. Write highlights just before merging: if another PR merges to \`main\` first, this branch is rebuilt and they need to be added again. See RELEASING.md, \"Release highlights\"."
+          fi
+
+          if [ -n "$EXISTING" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$EXISTING" -f body="$BODY" > /dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$PR_NUMBER/comments" -f body="$BODY" > /dev/null
+          fi
+
+  # :latest tracks the latest tagged release, never an in-between commit.
+  image:
+    needs: version
+    if: needs.version.outputs.is_new == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -28,10 +142,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version
-        id: version
-        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
@@ -39,13 +149,13 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/docubil:${{ steps.version.outputs.value }}
+            ghcr.io/${{ github.repository_owner }}/docubil:${{ needs.version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/docubil:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  github-release:
-    needs: build-and-push
+  publish:
+    needs: [version, image]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -57,11 +167,14 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Build release notes
-        run: node scripts/build-release-notes.mjs "$GITHUB_REF_NAME" > /tmp/release-notes.md
+      - name: Build this version's release notes
+        run: node scripts/build-release-notes.mjs "${{ needs.version.outputs.version }}" > /tmp/release-notes.md
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          body_path: /tmp/release-notes.md
-          generate_release_notes: false
+      - name: Create the tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ needs.version.outputs.version }}" \
+            --target "$GITHUB_SHA" \
+            --title "v${{ needs.version.outputs.version }}" \
+            --notes-file /tmp/release-notes.md

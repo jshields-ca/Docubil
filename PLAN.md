@@ -1,160 +1,262 @@
 # Docubil — Project Plan
 
-_Last updated: 2026-09-21_
+_Last updated: 2026-10-17 · Decisions referenced as D-NNN live in [DECISIONS.md](DECISIONS.md)._
 
 ## Vision
 
-Bring PDF accessibility to any workspace, community, or use case — so
-everyone has equal access to data, forms, and PDF-based documents,
-regardless of budget or technical resources. Docubil analyzes PDFs against
-WCAG 2.1 AA/AAA and automatically remediates what can be fixed without
-human judgment, while being transparent about what still needs a human.
+Bring PDF accessibility to any workspace, community, or use case, so everyone
+has equal access to data, forms, and PDF-based documents regardless of budget
+or technical resources. Docubil checks PDFs against WCAG 2.1 AA/AAA, fixes
+what can be fixed without human judgment, and is honest about what still
+needs a person.
+
+**Where it's heading (D-007, D-009):** Docubil runs entirely in the user's
+browser. Documents never leave their device, it installs without admin rights,
+and the same build serves a free public site, a self-hosted copy, and an
+installed app.
 
 ## Working model
 
-- **Jeremy Shields** — product owner. Reviews, tests, and guides the
-  direction; weighs in when a decision is genuinely major (architecture,
-  license, branding, anything hard to reverse).
-- **Claude** — primary developer. Drives day-to-day implementation,
-  audits, and hardening. When a decision is ambiguous or high-stakes,
-  spins up a focused sub-agent review before presenting a recommendation,
-  rather than guessing or over-asking.
+- **Jeremy Shields:** product owner. Reviews, tests, and sets direction.
+  Decides anything major (architecture, license, branding, cost, anything
+  hard to reverse) by moving a `Proposed` entry in DECISIONS.md to `Accepted`.
+- **Claude:** primary developer. Drives day-to-day implementation, audits,
+  and hardening. Records every significant choice in DECISIONS.md. When a
+  call is ambiguous or high-stakes, presents a recommendation with its
+  trade-offs instead of guessing.
 
-## Audit summary (Phase 0, completed 2026-09-20)
+## How to read this plan
 
-What's already solid:
-- Express backend is functional and well-tested (37/37 tests passing,
-  ESLint clean). Real security controls exist: PDF magic-byte validation,
-  Helmet CSP, CORS allowlist, rate limiting, UUID-validated job IDs,
-  non-root Docker user, scheduled file/job cleanup.
-- The Python enhancement layer (`pikepdf` + `pdfplumber`) is optional and
-  degrades gracefully to heuristic-only analysis when unavailable — good
-  design for a tool meant to run in constrained environments.
-- Docker/Compose setup is already production-minded (healthcheck, volumes,
-  non-root user).
+Each phase has a **goal**, a **scope** (what's in and, as importantly, what
+isn't), and **success criteria**: checks that can be verified, all of which
+must pass before the phase is marked done. A phase that can't meet its
+criteria gets re-scoped here, in the open, rather than quietly declared done.
 
-What needs attention:
-- **License inconsistency**: `LICENSE` already contains full AGPL-3.0 text,
-  but `package.json` and `README.md` still declare MIT. Needs reconciling.
-- **Incomplete rebrand**: GitHub repo is `Docubil`; `package.json` name/repo
-  URL, README badges/links, and the Docker container name still say
-  `pdf-accessibility`.
-- **Leaked generated content**: 8 remediated PDF files are committed and
-  tracked in git under `output/`, despite that directory now being
-  gitignored (the rule only prevents *future* tracking — these predate it).
-  Needs a decision: untrack going forward, or a full history rewrite to
-  remove the exposure completely.
-- **Dependency bloat/risk**: `requirements.txt` lists 12 Python packages;
-  the code only uses 2 (`pikepdf`, `pdfplumber`). `npm audit` reports 8
-  vulnerabilities (5 high) in the production dependency tree; `multer@1.x`
-  has known CVEs patched in 2.x.
-- **No governance scaffolding**: no CONTRIBUTING.md, CODE_OF_CONDUCT.md,
-  SECURITY.md, issue/PR templates, or CODEOWNERS exist yet.
-- **CI covers only lint + test**: no CodeQL, no dependency-audit gate, no
-  Dependabot, no accessibility testing of the app's own UI.
-- **Frontend** is a functional but visually dated vanilla HTML/CSS/JS app
-  (~1,450 lines) — confirmed as a full-rebuild target, not something to
-  preserve piecemeal.
+## Status at a glance
 
-## Phases
+| Phase | Theme | Status |
+|---|---|---|
+| 0–4 | Audit, governance, CI hardening, frontend rebuild, GHCR releases | ✅ Done (v0.1.0) |
+| 5 | Project foundations refresh | 🟡 In review |
+| 6 | Accuracy baseline | ⏭️ Next |
+| 7 | Browser-first core and installable app | Planned |
+| 8 | Free public site | Planned, D-010 proposed |
+| 9 | Windows desktop build | Conditional |
+| — | Community growth | Ongoing |
 
-### Phase 0 — Audit & Planning ✅
-**Goal:** Understand what exists before changing anything irreversible.
-**Approval metric:** This document, reviewed and accepted by the product
-owner.
+---
 
-### Phase 1 — Governance & Rebrand Reconciliation ✅
-**Goal:** Docubil is internally consistent and has the baseline docs any
-serious open-source project needs.
-**Tasks:**
-- Reconcile LICENSE/package.json/README to AGPL-3.0 consistently.
-- Full rename sweep: package name, repo URLs, badges, Docker image/container
-  names, docs — `pdf-accessibility` → `docubil` everywhere.
-- Write CONTRIBUTING.md (AGPL-aware: explain copyleft implications for
-  contributors), CODE_OF_CONDUCT.md (Contributor Covenant), SECURITY.md
-  (vulnerability disclosure + data retention policy for uploaded PDFs).
-- Add `.github/ISSUE_TEMPLATE/`, `PULL_REQUEST_TEMPLATE.md`, CODEOWNERS.
-- Resolve the leaked-PDF git history question per owner decision.
-**Approval metric:** All doc links resolve; `npm run lint && npm test`
-still green; PR reviewed and merged by the product owner.
+## Completed
 
-### Phase 2 — Security & CI Hardening ✅
-**Goal:** No PR merges without passing security and quality gates.
-**Tasks:**
-- Add CodeQL workflow (JS + Python).
-- Add `npm audit --audit-level=high` and `pip-audit` as CI gates.
-- Add Dependabot config for npm + pip.
-- Prune `requirements.txt` to actual usage; upgrade `multer` to 2.x and
-  resolve remaining `npm audit` findings.
-- Document recommended GitHub repo settings (branch protection on `main`,
-  required reviews, required status checks, secret scanning/push
-  protection) for the owner to apply.
-**Approval metric:** CI runs lint + test + CodeQL + dependency audit on
-every PR, all green on `main`; branch protection applied.
+<details>
+<summary>Phases 0–4 and runtime maintenance (Sept 2026)</summary>
 
-### Phase 3 — Frontend Rebuild ✅
-**Goal:** A modern, accessible, well-animated interface built on
-React + Vite + Tailwind (decided 2026-09-20).
-**Tasks:**
-- New component architecture and design system.
-- Purposeful motion (Framer Motion) — polish, not distraction.
-- Fully responsive; keyboard and screen-reader navigable throughout.
-- axe-core/pa11y wired into CI against the built app.
-**Approval metric:** Zero accessibility violations in CI, enforced via
-`jest-axe` on every component (`client`'s CI job) — achieved.
+**Phase 0, Audit & planning.** Found a license mismatch (AGPL text, MIT
+metadata), an incomplete rebrand, committed output PDFs, 10 unused Python
+packages, 8 `npm audit` findings, no governance docs, and CI covering only
+lint and test. _Done when:_ the owner accepted the audit.
 
-### Phase 4 — Release & Distribution ✅
-**Goal:** Anyone can run Docubil via `docker run` or `docker compose up`
-without cloning the repo.
-**Tasks:**
-- GitHub Actions workflow publishing versioned, multi-arch images to
-  GitHub Container Registry (GHCR) (decided 2026-09-20) on tagged release.
-- Keep SemVer + Conventional Commits + `standard-version` (already
-  configured) driving changelog generation.
-- Release notes format: short human-readable summary grouped as
-  Major/Minor/Fix/Security, with full technical changelog in a collapsed
-  `<details>` accordion in the GitHub Release body.
-**Approval metric:** `docker compose pull && docker compose up` against a
-tagged GHCR image works end-to-end with no source checkout — verified
-with the real `v0.1.0` release (`ghcr.io/jshields-ca/docubil:0.1.0`).
-(The first attempt at cutting `v0.1.0` actually failed CI's Docker build —
-`npm ci --omit=dev` ran the `prepare` script, which needs a devDependency
-that `--omit=dev` doesn't install — caught and fixed, and a `docker`
-build-validation job was added to CI so this class of bug fails a PR
-instead of a release next time.)
+**Phase 1, Governance & rebrand.** AGPL-3.0-only everywhere (D-001), Docubil
+everywhere (D-002), CONTRIBUTING/CODE_OF_CONDUCT/SECURITY, issue and PR
+templates, CODEOWNERS, committed PDFs untracked (D-003). _Done when:_ all doc
+links resolved, and lint and tests were green.
 
-### Runtime maintenance (completed 2026-09-21)
+**Phase 2, Security & CI.** CodeQL (JS and Python), `npm audit` and
+`pip-audit` gates, Dependabot, `requirements.txt` pruned to the two packages
+actually used, `multer` 2.x. _Done when:_ every PR ran lint, test, CodeQL and
+dependency audit, all green on `main`.
 
-Not a numbered phase — ongoing hardening that surfaced right after the
-`v0.1.0` cut and was worth recording:
-- Triaged all 20 open Dependabot PRs: merged what verified safe (with
-  real installs/test runs against the target version, not just reading
-  changelogs), held or closed what didn't (a non-LTS Docker base image
-  bump, two client-side bumps blocked on `eslint-plugin-jsx-a11y`'s own
-  ESLint 10 support, and a `uuid` major bump that's ESM-only and breaks
-  under Jest's module loader).
-- Migrated the Docker image and all CI workflows from Node 20 (end-of-life
-  April 2026) to Node 24 (current Active LTS), with an explicit
-  `engines.node` floor in both `package.json` files.
-- Found and fixed a real, pre-existing bug while validating that
-  migration: `pdf-parse`'s bundled legacy `pdf.js` could corrupt parsing
-  under Jest + Node 24 depending on `Buffer` vs `Uint8Array` typing —
-  confirmed production code was never affected, fixed by normalizing the
-  input type before parsing.
-**Approval metric:** Full test suite green on real Node 20 and Node 24;
-CI green on `main`.
+**Phase 3, Frontend rebuild.** React + Vite + Tailwind + Framer Motion
+(D-004), keyboard and screen-reader navigable, `jest-axe` on every component.
+_Done when:_ zero axe violations, enforced in CI.
 
-### Phase 5 — Community Growth (ongoing)
-**Goal:** Docubil is approachable to contributors and users beyond its
-original author.
-**Tasks:** i18n/l10n groundwork, a lightweight docs site, "good first
-issue" labeling, contributor onboarding polish.
-**Approval metric:** Reassessed each quarter based on actual community
-engagement — not a fixed deliverable.
+**Phase 4, Release & distribution.** Multi-arch images on GHCR (D-005).
+_Done when:_ `docker compose pull && up` against `ghcr.io/jshields-ca/docubil:0.1.0`
+worked with no source checkout.
+
+**Runtime maintenance.** Node 20 → 24 (D-006), the first Dependabot triage, a
+real `pdf-parse` Buffer/Uint8Array bug fixed, and a `docker` build check added
+to CI after the first v0.1.0 cut failed.
+
+</details>
+
+---
+
+## Phase 5 — Project foundations refresh
+
+**Goal:** Docubil is ready for outside contributors and users: clear docs, a
+visible plan and decision history, structured intake, and a release process
+that produces readable notes.
+
+**Scope, in:**
+- Release process moved to Changesets + written highlights, mirroring
+  LatestArr (D-008): `.changeset/`, `scripts/write-changelog.mjs`,
+  `scripts/build-release-notes.mjs`, `.github/release-highlights/`, and a
+  Version-Packages release workflow.
+- Issue forms: bug, feature, and a dedicated "wrong result" form for false
+  positives and negatives, plus a PR template with security and accessibility
+  checklists.
+- DECISIONS.md (this plan's companion) and this rewrite of PLAN.md.
+- The [browser-first spike](docs/spikes/browser-first.md) and its findings.
+- Docs sweep: README, CONTRIBUTING, RELEASING, SECURITY in line with all of
+  the above. `.env` untracked.
+- Dependency triage: 16 Dependabot PRs resolved (13 merged including Express
+  5, 3 closed with reasons recorded on each PR); Dependabot ignore rules for
+  the blocked ones.
+
+**Scope, out:** any change to analysis or remediation behaviour (Phase 6).
+
+**Success criteria:**
+1. `main` CI is green (lint, test, frontend, security, docker, CodeQL).
+2. A dry run, `node scripts/build-release-notes.mjs <version>`, renders
+   Highlights / What's changed / Upgrading / Full changelog for the pending
+   release.
+3. Every open Dependabot PR is merged, closed with a reason, or ignored
+   with a comment in `dependabot.yml`.
+4. Every relative doc link and anchor resolves, and no doc describes the old
+   release process (`standard-version`, `npm run release`) as current or
+   the license as anything but AGPL-3.0-only.
+5. The owner has reviewed the PR and the `Proposed` decisions (D-010, D-011).
+
+---
+
+## Phase 6 — Accuracy baseline
+
+**Goal:** Know how right Docubil is, and fix the ways it's known to be wrong,
+before rebuilding it (Phase 7 needs this to prove the rebuild is at least as
+good).
+
+**Scope, in:**
+- **A test corpus** under `tests/corpus/`: about 30 PDFs with known answers.
+  It covers tagged/untagged, forms (flat and nested), figures with and without
+  alt text, non-English text, bookmarks, low contrast, scanned images, signed,
+  encrypted, and one large file (100+ pages). Sources: generated by our
+  helpers, pdf.js's test corpus (Apache-2.0), and the PDF Association's PDF/UA
+  reference suite where its license allows. Each file has a JSON file
+  recording the expected findings.
+- **A corpus runner** (`npm run corpus`) that reports, per check, true and
+  false positives and negatives against those expected findings.
+- **The known defects** found by the spike and the Phase 5 docs review, each
+  its own issue and PR:
+  1. Nested AcroForm fields not counted: 1 of 236 found on IRS Form 1040.
+  2. Every image reported as missing alt text, even when the structure tree has it.
+  3. `/MarkInfo/Marked` set on documents with no structure tree.
+  4. Language hard-coded to `en` when remediating.
+  5. Generated tooltips read machine names aloud (`"Please enter: topmostSubform[0]"`).
+  6. Python analysis and remediation have no automated tests at all.
+  7. A missing title is "fixed" with the placeholder `"Accessible Document"`,
+     and the subject is set to `"Document processed for accessibility
+     compliance"`. The first silences a WCAG 2.4.2 failure without fixing
+     it; the second claims compliance nobody verified. A title should come
+     from the document (first heading, or the file name), or be flagged.
+- Swap `pdf-lib` for `@cantoo/pdf-lib` (D-011, if accepted).
+
+**Scope, out:** new checks, UI changes, architecture changes.
+
+**Success criteria:**
+1. `npm run corpus` runs in CI on every PR and fails if any check's accuracy
+   drops below the recorded baseline.
+2. Zero false positives on the corpus for tagging, language, alt text and
+   form-field checks (the ones users act on directly).
+3. Each of the seven defects above has a regression test and is fixed, or is
+   explicitly re-scoped in this plan with a reason.
+4. Remediation never writes a value that misdescribes the document: covered
+   by corpus tests that compare a remediated file's claims (`Marked`, `Lang`)
+   with what the document actually contains.
+
+---
+
+## Phase 7 — Browser-first core and installable app
+
+**Goal:** All analysis and remediation runs in the user's browser (D-007), and
+Docubil can be installed and used offline without admin rights (D-009).
+
+**Scope, in:**
+- **7.1 Close the spike's open questions:** browser memory and time on a 50 MB
+  / 200-page PDF in Chromium (Playwright), behaviour on signed and encrypted
+  PDFs (warn before a rewrite invalidates a signature), and the bundle size
+  `@cantoo/pdf-lib` adds.
+- **7.2 Core library:** `client/src/core/`, framework-free JS modules for
+  analyze, remediate and report, running in a Web Worker so the UI stays
+  responsive. They are ported from `AccessibilityAnalyzer`, `RemediationService`
+  and `ReportGenerator`, and backed by the Phase 6 corpus.
+- **7.3 UI switch:** the React app calls the core directly instead of `/api/*`.
+  Reports and remediated PDFs are generated and downloaded locally.
+- **7.4 Installable app:** a web app manifest plus a service worker that caches
+  the app shell, so it installs from Edge or Chrome and works offline.
+- **7.5 Server reduced to static hosting:** the Docker image serves the built
+  app (nginx or Caddy instead of Express), and `/api/*` and the Python layer
+  are removed once 7.2 passes the corpus. That release is the breaking-change
+  boundary, called out under "Before you upgrade".
+
+**Scope, out:** the public site (Phase 8), desktop packaging (Phase 9), new checks.
+
+**Success criteria:**
+1. **No document leaves the device:** a Playwright test runs a full
+   analyze → remediate → download cycle and asserts that no network request
+   happens after the app shell loads. It runs in CI.
+2. **Works offline:** the same cycle passes in Playwright with the network
+   disabled after the first load.
+3. **Installs without admin:** installed as a PWA from Edge on a Windows 11
+   standard (non-admin) account, and from Chrome on macOS and Ubuntu standard
+   accounts, with no elevation prompt. Checked by hand once per release
+   and recorded in the release PR.
+4. **At least as accurate:** on the Phase 6 corpus, the browser core matches
+   or beats the server path on every check.
+5. **Usable on big files:** a 200-page, 50 MB PDF analyzes in under 60 s in
+   Chromium on a 4 GB machine profile without the tab crashing.
+6. Zero axe violations in CI, unchanged from Phase 3.
+
+---
+
+## Phase 8 — Free public site
+
+**Goal:** Anyone can use Docubil from a URL, for free, with the same privacy
+guarantee as running it locally (D-010).
+
+**Scope, in:** static hosting (GitHub Pages or Cloudflare Pages) deployed from
+each release, a custom domain, and a plain-language privacy page.
+
+**Scope, out:** accounts, analytics, server-side processing.
+
+**Success criteria:**
+1. The deployed site passes Phase 7's no-network test, run against the live URL.
+2. Hosting costs $0/month at the free tier, with the domain as the only cost.
+3. The privacy page's claim ("your files never leave your device") is
+   demonstrably true per criterion 1, and links to the test that proves it.
+
+**Waiting on:** D-010 acceptance and a domain choice.
+
+---
+
+## Phase 9 — Windows desktop build (conditional)
+
+**Goal:** A Windows build for workplaces that block PWA installation.
+
+**Trigger:** start only if users report that PWA installs are blocked by their
+organization's policies (issue label `install-blocked`). Until then the PWA
+covers the need at no cost.
+
+**Approach if triggered:** Tauri, wrapping the Phase 7 build and using the
+system WebView2. That's a small binary with a per-user NSIS installer to
+`%LOCALAPPDATA%`, so no admin rights. It also ships as a portable `.exe`, and
+both are code-signed so SmartScreen doesn't block them.
+
+**Success criteria (if triggered):** installs and runs on a Windows 11
+standard account with no UAC prompt, passes Phase 7's no-network test, and
+SmartScreen shows the publisher name.
+
+---
+
+## Ongoing — Community growth
+
+Not a phase with an end date. Reviewed quarterly against real engagement:
+"good first issue" labels on corpus and documentation work, i18n groundwork
+(Docubil's own UI, and the non-English documents it checks), contributor
+onboarding polish, and a lightweight docs site once there's enough to warrant it.
 
 ## Versioning & release notes
 
-SemVer, enforced via Conventional Commits (already set up via
-`commitizen`/`cz-git`) and `standard-version`. Every tagged release gets a
-GitHub Release with a short categorized summary at the top and full
-detail in a collapsible section — see Phase 4.
+SemVer; while the major version is `0`, breaking changes may land in minor
+releases. Changes are recorded as Changesets, and each GitHub Release opens
+with human-written highlights (D-008). See [RELEASING.md](RELEASING.md).

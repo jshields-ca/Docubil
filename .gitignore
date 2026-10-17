@@ -100,3 +100,5 @@ data/
 # ever serves it.
 /public/
 client/node_modules/ 
+# Local environment (copy from .env.example)
+.env

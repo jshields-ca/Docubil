@@ -1,51 +1,69 @@
-name: Bug Report
-description: Report something that isn't working as expected
-labels: ["bug"]
+name: Bug report
+description: Something in Docubil is broken, crashes, or doesn't work as documented
+labels: ["bug", "triage"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please search existing issues first to avoid duplicates.
+
+        **Did Docubil run fine but get a check or fix wrong** (a false alarm, a missed problem, or a fix that made the PDF worse)? Use the **Wrong result** form instead.
+
+        **Please don't attach confidential PDFs.** Public issues are visible to everyone. If the problem only shows up with a private document, describe it, or make a copy with the sensitive content removed.
+
   - type: textarea
     id: description
     attributes:
       label: What happened?
-      description: A clear description of the bug.
+      description: A clear description of the bug, and what you expected instead.
     validations:
       required: true
+
   - type: textarea
     id: repro
     attributes:
       label: Steps to reproduce
-      description: How can we reproduce this? Include a sample PDF (with any sensitive content removed) if relevant.
       placeholder: |
         1. Upload a PDF with...
-        2. Select WCAG level...
-        3. Click Analyze...
-        4. See error...
+        2. Choose WCAG AA / AAA...
+        3. Click...
+        4. See...
     validations:
       required: true
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-    validations:
-      required: true
+
   - type: input
     id: version
     attributes:
       label: Docubil version
-      placeholder: e.g. 0.0.1, or the git commit SHA
+      description: Shown by `/health`, or the image tag you pulled.
+      placeholder: e.g. 0.2.0, latest, or a commit SHA
     validations:
       required: true
+
   - type: dropdown
     id: deployment
     attributes:
       label: How are you running Docubil?
       options:
-        - Docker / docker-compose
-        - Local (npm start)
+        - Docker / Docker Compose
+        - From source (npm start)
         - Other
     validations:
       required: true
-  - type: textarea
+
+  - type: input
     id: environment
     attributes:
-      label: Environment
-      placeholder: OS, Node.js version, Python version, browser (if UI-related)
+      label: Browser and operating system
+      placeholder: e.g. Edge 141 on Windows 11, Firefox 144 on Ubuntu 24.04
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Server or browser console output. Please remove anything private first.
+      render: shell
+    validations:
+      required: false

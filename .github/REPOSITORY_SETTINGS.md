@@ -2,7 +2,8 @@
 
 These are settings pages in the GitHub UI, not files in this repo — they
 must be applied manually by someone with admin access (the CI workflows in
-this repo can't configure them). This is Phase 2 of `PLAN.md`.
+this repo can't configure them). First written in Phase 2 of `PLAN.md`,
+updated for the Changesets release flow in Phase 5.
 
 ## Branch protection (Settings → Branches → Add rule for `main`)
 
@@ -29,6 +30,32 @@ this repo can't configure them). This is Phase 2 of `PLAN.md`.
 - **Push protection** (blocks commits containing detected secrets): on.
 - **Code scanning**: CodeQL is already wired up via `.github/workflows/codeql.yml` —
   once it's run once, results appear automatically under the Security tab.
+
+## Actions (Settings → Actions → General)
+
+- **Workflow permissions:** "Read and write permissions", and tick **"Allow
+  GitHub Actions to create and approve pull requests"**. `release.yml` needs
+  both to open and update the "chore: version packages" PR (see RELEASING.md).
+  Don't add the **Release highlights** check to the required checks above:
+  it only runs on that PR.
+
+## Discussions and labels
+
+- **Discussions: on**, with the default categories. The issue forms link to
+  the `Q&A` (`q-a`) and `Ideas` (`ideas`) categories by URL.
+- **Labels** the issue forms and Dependabot apply, which must exist or GitHub
+  silently drops them (Issues → Labels):
+
+  | Label | Applied by | Meaning |
+  |---|---|---|
+  | `triage` | every issue form | Not yet looked at by a maintainer |
+  | `bug` | Bug report | Something is broken |
+  | `accuracy` | Wrong result | A check or fix got a PDF wrong; candidate for the test corpus |
+  | `enhancement` | Feature request | New capability |
+  | `dependencies` | Dependabot | Dependency update |
+  | `docker` | Dependabot | Base image update |
+  | `install-blocked` | maintainers | A user can't install the web app at work (the trigger for Phase 9) |
+  | `good first issue` | maintainers | Small and well-scoped, for new contributors |
 
 ## General repo settings (Settings → General)
 
