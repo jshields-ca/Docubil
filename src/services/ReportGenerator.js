@@ -6,7 +6,7 @@ const logger = require('../logger');
 
 class ReportGenerator {
   constructor() {
-    this.reportsDir = './reports';
+    this.reportsDir = process.env.REPORTS_DIR || './reports';
     this.ensureReportsDir();
   }
 
