@@ -228,7 +228,7 @@ Analysis and remediation degrade gracefully: if the Python bridge is unavailable
 Copy `.env.example` to `.env` and adjust as needed — it documents every variable (server port, file size/retention limits, CORS origins, rate limiting, the Python interpreter path, log level). Key defaults:
 
 - **File upload**: 50 MB maximum, PDF files only (validated by magic bytes, not just extension)
-- **Rate limiting**: 100 requests per 15 minutes per IP (configurable)
+- **Rate limiting**: 100 requests per 15 minutes per IP (configurable). Behind a reverse proxy, set `TRUST_PROXY=1` (or your proxy's address) so each user is limited separately
 - **File cleanup**: uploaded/output files deleted after 24 hours by a scheduled job
 - **CORS**: allow-listed origins via `ALLOWED_ORIGINS`, not wide open by default in production
 - **CSP**: Helmet-managed Content Security Policy headers

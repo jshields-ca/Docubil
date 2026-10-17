@@ -31,6 +31,10 @@ services:
       LOG_LEVEL: info
       RATE_LIMIT_WINDOW_MS: 900000
       RATE_LIMIT_MAX_REQUESTS: 100
+      # Behind a reverse proxy (nginx, Caddy, Traefik, Cloudflare Tunnel), set this
+      # to the number of proxies in front of Docubil, usually 1. Otherwise every
+      # user shares one rate limit. Leave it unset when nothing sits in front.
+      # TRUST_PROXY: 1
       CLEANUP_INTERVAL_HOURS: 1
       FILE_RETENTION_HOURS: 24
     volumes:

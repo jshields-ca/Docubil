@@ -38,8 +38,34 @@ const FILE_RETENTION_MS =
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
+/**
+ * TRUST_PROXY → Express's `trust proxy` setting. Unset means the client
+ * address is the socket's, which is right without a reverse proxy; behind
+ * one it makes every user share one rate-limit bucket. A number is a hop
+ * count, `true`/`false` are booleans, anything else (addresses, subnets,
+ * `loopback`) is passed through as-is.
+ */
+function parseTrustProxy(value) {
+  if (value === undefined || value.trim() === '') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (/^\d+$/.test(trimmed)) {
+    return parseInt(trimmed, 10);
+  }
+  if (trimmed === 'true' || trimmed === 'false') {
+    return trimmed === 'true';
+  }
+  return trimmed;
+}
+const TRUST_PROXY = parseTrustProxy(process.env.TRUST_PROXY);
+
 // ─── Express app ─────────────────────────────────────────────────────────────
 const app = express();
+
+if (TRUST_PROXY !== undefined) {
+  app.set('trust proxy', TRUST_PROXY);
+}
 
 // HTTP request logging (suppressed in tests)
 if (process.env.NODE_ENV !== 'test') {
