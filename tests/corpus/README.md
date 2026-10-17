@@ -57,8 +57,12 @@ The best source is a **Wrong result** issue. For each one:
 
 ## Coverage gaps
 
-Phase 6 aims for about 30 documents. Not covered yet: scanned (image-only)
-pages, right-to-left text, tables, lists, and a 100+ page document (signed
-and encrypted files are covered by `tests/signed.test.js` and
-`tests/encryption.test.js`), and the PDF Association's PDF/UA reference suite (pending a
-license check).
+Phase 6 aims for about 30 documents; there are 23. Every one so far is
+generated or a government form, so the biggest gap is **real-world exports**:
+Word, Google Docs, InDesign and scanner output, tagged and untagged, which is
+exactly what "Wrong result" reports should supply. Also not covered yet:
+right-to-left text, tables, lists, multi-column layouts, and the PDF
+Association's PDF/UA reference suite (pending a license check). Signed and
+encrypted files are covered separately by `tests/signed.test.js` and
+`tests/encryption.test.js`, and very large files by the
+[browser benchmark](../../docs/spikes/browser-first.md#follow-up-a-large-file-in-a-real-browser-2026-10-17).
