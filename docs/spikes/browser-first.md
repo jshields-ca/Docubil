@@ -74,10 +74,33 @@ matter whichever architecture wins:
    label (text next to the widget), and anything we can't derive should be
    flagged for review instead of filled with filler.
 
+## Follow-up: a large file in a real browser (2026-10-17)
+
+The same analysis and remediation code ran inside headless Chromium 141 (via
+Playwright) on a generated 200-page, 50.6 MB PDF: one incompressible image
+and 30 lines of text per page. Harness: [`browser-bench/`](browser-bench/).
+
+| Document | Analyze | Remediate | Peak JS heap (page) |
+|---|---|---|---|
+| IRS 1040, 2 pages, 0.3 MB | 1.0 s | 0.6 s | 49 MB |
+| 200 pages, 50.6 MB | 3.9 s | 0.7 s | 215 MB |
+| 200 pages, 50.6 MB, CPU throttled 4× | 7.4 s | 1.7 s | 214 MB |
+
+Comfortably inside Phase 7's "under 60 s" criterion, on a 4-core machine.
+The heap figure covers the page only, not pdf.js's worker, so real memory use
+is higher. Phase 7.1 should still measure whole-process memory under a 4 GB
+limit.
+
+**Found along the way:** pdf.js 6.4's default (modern) build calls
+`Map.prototype.getOrInsertComputed`, which Chromium 141 doesn't have, so it
+fails outright. Its **legacy build** works. Work computers often run
+managed, older browsers, so Docubil should ship the legacy build (or test
+the modern one against its browser-support floor in CI).
+
 ## Still unproven (next steps before committing to the rewrite)
 
-- **Browser memory on large files** (100+ pages, scanned image-heavy PDFs):
-  run the same script in Chromium via Playwright against a 50 MB file.
+- **Whole-process memory under a 4 GB limit,** and image-heavy *scanned*
+  documents (large JPEG2000/JBIG2 images rather than raw RGB).
 - **pdf-lib save fidelity** on signed PDFs (rewriting invalidates
   signatures; we should warn rather than silently break them) and on
   encrypted PDFs.

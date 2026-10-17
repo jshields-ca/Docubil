@@ -197,10 +197,13 @@ once D-011 is decided.
 Docubil can be installed and used offline without admin rights (D-009).
 
 **Scope, in:**
-- **7.1 Close the spike's open questions:** browser memory and time on a 50 MB
-  / 200-page PDF in Chromium (Playwright), behaviour on signed and encrypted
-  PDFs (warn before a rewrite invalidates a signature), and the bundle size
-  `@cantoo/pdf-lib` adds.
+- **7.1 Close the spike's open questions:** behaviour on signed and encrypted
+  PDFs (warn before a rewrite invalidates a signature), whole-process memory
+  under a 4 GB limit, scanned image-heavy files, and the bundle size
+  `@cantoo/pdf-lib` adds. _Partly answered:_ a 200-page, 50 MB PDF analyzes
+  and remediates in Chromium in 4.6 s (9.8 s with the CPU throttled 4×), and
+  pdf.js's **legacy** build is required, because the modern build fails on
+  Chromium 141 ([spike follow-up](docs/spikes/browser-first.md#follow-up-a-large-file-in-a-real-browser-2026-10-17)).
 - **7.2 Core library:** `client/src/core/`, framework-free JS modules for
   analyze, remediate and report, running in a Web Worker so the UI stays
   responsive. They are ported from `AccessibilityAnalyzer`, `RemediationService`
