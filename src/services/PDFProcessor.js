@@ -2,7 +2,7 @@
 
 const fs = require('fs').promises;
 const pdfParse = require('pdf-parse');
-const { PDFDocument } = require('pdf-lib');
+const { PDFDocument, PDFName } = require('pdf-lib');
 const logger = require('../logger');
 
 class PDFProcessor {
@@ -127,9 +127,25 @@ class PDFProcessor {
       const pdfDoc = await PDFDocument.load(dataBuffer, { ignoreEncryption: true });
       const encrypted = pdfDoc.isEncrypted;
       const needsPassword = encrypted && (await this._needsPassword(dataBuffer));
-      return { isValid: true, errors: [], encrypted, needsPassword };
+      const signed = !encrypted && this._isSigned(pdfDoc);
+      return { isValid: true, errors: [], encrypted, needsPassword, signed };
     } catch (error) {
       return { isValid: false, errors: [error.message] };
+    }
+  }
+
+  /**
+   * Whether any signature field holds a signature. Rewriting the file in any
+   * way invalidates it.
+   */
+  _isSigned(pdfDoc) {
+    try {
+      return pdfDoc.getForm().getFields().some((field) => {
+        const dict = field.acroField.dict;
+        return dict.get(PDFName.of('FT')) === PDFName.of('Sig') && dict.has(PDFName.of('V'));
+      });
+    } catch {
+      return false;
     }
   }
 

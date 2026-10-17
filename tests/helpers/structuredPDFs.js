@@ -91,8 +91,38 @@ async function createTextPDF({ title, heading, body = '', grey = 0, pages = 1 } 
   return Buffer.from(await pdfDoc.save());
 }
 
+/**
+ * A PDF with a filled signature field. The signature value is a dummy (no
+ * real cryptography), which is enough for "is this document signed?".
+ */
+async function createSignedPDF() {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([612, 792]);
+  const ctx = pdfDoc.context;
+  const signature = ctx.register(ctx.obj({
+    Type: 'Sig',
+    Filter: 'Adobe.PPKLite',
+    SubFilter: 'adbe.pkcs7.detached',
+    Name: PDFString.of('Test Signer'),
+  }));
+  const field = ctx.register(ctx.obj({
+    Type: 'Annot',
+    Subtype: 'Widget',
+    FT: 'Sig',
+    T: PDFString.of('Signature1'),
+    V: signature,
+    Rect: [50, 50, 250, 100],
+    F: 4,
+    P: page.ref,
+  }));
+  page.node.set(PDFName.of('Annots'), ctx.obj([field]));
+  pdfDoc.catalog.set(PDFName.of('AcroForm'), ctx.obj({ Fields: [field], SigFlags: 3 }));
+  return Buffer.from(await pdfDoc.save());
+}
+
 module.exports = {
   createNestedFormPDF,
+  createSignedPDF,
   createTaggedFigurePDF,
   createTextPDF,
   createUntaggedImagePDF,

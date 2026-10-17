@@ -340,7 +340,7 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
  *       404:
  *         description: Job or PDF not found
  *       422:
- *         description: The PDF is encrypted, so it won't be rewritten
+ *         description: The PDF is encrypted or digitally signed, so it won't be rewritten
  *       500:
  *         description: Internal error
  */
@@ -363,7 +363,15 @@ app.post('/api/remediate/:jobId', requireValidJobId, async (req, res) => {
 
     // pdf-lib can't decrypt, so rewriting an encrypted file produces one that
     // won't open; removing the encryption would strip the author's settings.
-    const { encrypted } = await pdfProcessor.validatePDF(filePath);
+    const { encrypted, signed } = await pdfProcessor.validatePDF(filePath);
+    if (signed) {
+      return res.status(422).json({
+        error:
+          'This PDF is digitally signed, so Docubil won\'t change it: any change invalidates the ' +
+          'signature. The report above still applies. Make the fixes in the unsigned original, ' +
+          'then sign it again.',
+      });
+    }
     if (encrypted) {
       return res.status(422).json({
         error:
