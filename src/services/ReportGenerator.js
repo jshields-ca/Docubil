@@ -4,6 +4,23 @@ const fs = require('fs').promises;
 const path = require('path');
 const logger = require('../logger');
 
+/**
+ * Escape text for HTML. Report content includes strings taken from the
+ * uploaded PDF (its metadata, form field names) and from the upload's file
+ * name, so none of it may be interpreted as markup.
+ */
+function esc(value) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 class ReportGenerator {
   constructor() {
     this.reportsDir = process.env.REPORTS_DIR || './reports';
@@ -98,7 +115,7 @@ class ReportGenerator {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docubil Accessibility Report - ${filename}</title>
+    <title>Docubil Accessibility Report - ${esc(filename)}</title>
     <style>
         ${this.getCSS()}
     </style>
@@ -109,10 +126,10 @@ class ReportGenerator {
             <h1>PDF Accessibility Report</h1>
             <div class="report-meta">
                 <div class="meta-item">
-                    <strong>File:</strong> ${filename}
+                    <strong>File:</strong> ${esc(filename)}
                 </div>
                 <div class="meta-item">
-                    <strong>WCAG Level:</strong> ${wcagLevel}
+                    <strong>WCAG Level:</strong> ${esc(wcagLevel)}
                 </div>
                 <div class="meta-item">
                     <strong>Status:</strong> <span class="status status-${status}">${status.toUpperCase()}</span>
@@ -121,7 +138,7 @@ class ReportGenerator {
                     <strong>Generated:</strong> ${new Date(generatedAt).toLocaleString()}
                 </div>
                 <div class="meta-item">
-                    <strong>Job ID:</strong> ${jobId}
+                    <strong>Job ID:</strong> ${esc(jobId)}
                 </div>
                 <div class="meta-item">
                     <strong>Analysis:</strong>
@@ -216,16 +233,16 @@ class ReportGenerator {
             <h2>Document Information</h2>
             <div class="info-grid">
                 <div class="info-item">
-                    <strong>Title:</strong> ${pdfInfo.title || 'Not specified'}
+                    <strong>Title:</strong> ${esc(pdfInfo.title) || 'Not specified'}
                 </div>
                 <div class="info-item">
-                    <strong>Author:</strong> ${pdfInfo.author || 'Not specified'}
+                    <strong>Author:</strong> ${esc(pdfInfo.author) || 'Not specified'}
                 </div>
                 <div class="info-item">
-                    <strong>Subject:</strong> ${pdfInfo.subject || 'Not specified'}
+                    <strong>Subject:</strong> ${esc(pdfInfo.subject) || 'Not specified'}
                 </div>
                 <div class="info-item">
-                    <strong>Keywords:</strong> ${pdfInfo.keywords || 'Not specified'}
+                    <strong>Keywords:</strong> ${esc(pdfInfo.keywords) || 'Not specified'}
                 </div>
                 <div class="info-item">
                     <strong>Pages:</strong> ${pdfInfo.pageCount}
@@ -307,7 +324,7 @@ class ReportGenerator {
                         <div class="issue-header">
                             <div class="issue-title">
                                 <span class="issue-number">${index + 1}</span>
-                                <h3>${issue.title}</h3>
+                                <h3>${esc(issue.title)}</h3>
                                 <span class="severity-badge severity-${issue.severity}">${issue.severity.toUpperCase()}</span>
                             </div>
                             <div class="issue-meta">
@@ -315,18 +332,18 @@ class ReportGenerator {
                                   WCAG ${issue.wcagRule}
                                   ${wcagUrl ? `<a href="${wcagUrl}" target="_blank" rel="noopener" class="wcag-link">🔗</a>` : ''}
                                 </span>
-                                <span class="page-info">Page: ${issue.page}</span>
-                                <span class="element-info">Element: ${issue.element}</span>
+                                <span class="page-info">Page: ${esc(issue.page)}</span>
+                                <span class="element-info">Element: ${esc(issue.element)}</span>
                             </div>
                         </div>
                         
                         <div class="issue-content">
                             <div class="issue-description">
-                                <p>${issue.description}</p>
+                                <p>${esc(issue.description)}</p>
                             </div>
                             
                             <div class="issue-impact">
-                                <strong>Impact:</strong> ${issue.impact}
+                                <strong>Impact:</strong> ${esc(issue.impact)}
                             </div>
                             
                             <div class="issue-fixable">
@@ -338,14 +355,14 @@ class ReportGenerator {
                             
                             ${issue.fixApplied ? `
                                 <div class="fix-applied">
-                                    <strong>✅ Fix Applied:</strong> ${issue.fixApplied}
-                                    ${issue.fixDetails ? `<br><em>${issue.fixDetails}</em>` : ''}
+                                    <strong>✅ Fix Applied:</strong> ${esc(issue.fixApplied)}
+                                    ${issue.fixDetails ? `<br><em>${esc(issue.fixDetails)}</em>` : ''}
                                 </div>
                             ` : ''}
                             
                             ${issue.reason ? `
                                 <div class="manual-reason">
-                                    <strong>Manual Review Reason:</strong> ${issue.reason}
+                                    <strong>Manual Review Reason:</strong> ${esc(issue.reason)}
                                 </div>
                             ` : ''}
                         </div>
@@ -392,9 +409,9 @@ class ReportGenerator {
                     <div class="fixed-list">
                         ${fixedIssues.map(issue => `
                             <div class="fixed-item">
-                                <strong>${issue.title}</strong>
-                                <p>${issue.fixApplied}</p>
-                                ${issue.fixDetails ? `<em>${issue.fixDetails}</em>` : ''}
+                                <strong>${esc(issue.title)}</strong>
+                                <p>${esc(issue.fixApplied)}</p>
+                                ${issue.fixDetails ? `<em>${esc(issue.fixDetails)}</em>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -407,8 +424,8 @@ class ReportGenerator {
                     <div class="remaining-list">
                         ${remainingIssues.map(issue => `
                             <div class="remaining-item">
-                                <strong>${issue.title}</strong>
-                                <p>${issue.reason}</p>
+                                <strong>${esc(issue.title)}</strong>
+                                <p>${esc(issue.reason)}</p>
                             </div>
                         `).join('')}
                     </div>
