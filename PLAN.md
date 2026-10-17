@@ -72,7 +72,9 @@ _Done when:_ zero axe violations, enforced in CI.
 
 **Phase 4, Release & distribution.** Multi-arch images on GHCR (D-005).
 _Done when:_ `docker compose pull && up` against `ghcr.io/jshields-ca/docubil:0.1.0`
-worked with no source checkout.
+worked with no source checkout. _(Phase 5 found that this only held for a
+volume that already existed: a fresh one failed at startup. Fixed, and
+now covered by CI.)_
 
 **Runtime maintenance.** Node 20 → 24 (D-006), the first Dependabot triage, a
 real `pdf-parse` Buffer/Uint8Array bug fixed, and a `docker` build check added
@@ -105,10 +107,18 @@ that produces readable notes.
   turned `main` red), pino 10 was taken into this branch from #43, and 3 were
   closed with the reason recorded on each PR. Dependabot ignore rules cover
   the closed ones.
-- Bugs found along the way and fixed with tests: reports unreachable and
-  never cleaned up in Docker (`REPORTS_DIR` ignored); Python fixes never
-  saved into the downloaded PDF; PDF-derived text unescaped in the HTML
-  report; a single shared rate limit behind reverse proxies (#58).
+- Bugs found along the way, each fixed with a test that fails without the fix:
+  - a fresh `docker-compose.release.yml` install couldn't start (root-owned
+    `/data` volume), and local image builds baked in `.env` and host
+    `node_modules` (no `.dockerignore`);
+  - in Docker, reports were unreachable and never cleaned up (`REPORTS_DIR`
+    ignored);
+  - the Python-layer fixes were never saved into the downloaded PDF;
+  - PDF-derived text was unescaped in the HTML report;
+  - behind a reverse proxy, all users shared one rate limit (#58).
+
+  CI now smoke-tests the built image with a fresh volume, so the first two
+  can't come back unnoticed.
 
 **Scope, out:** any change to analysis or remediation behaviour (Phase 6).
 
