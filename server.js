@@ -351,7 +351,7 @@ app.post('/api/remediate/:jobId', requireValidJobId, async (req, res) => {
       return res.status(404).json({ error: 'Original PDF no longer available' });
     }
 
-    const { issues, pythonEnhanced } = await accessibilityAnalyzer.analyze(
+    const { issues, pythonEnhanced, context } = await accessibilityAnalyzer.analyze(
       filePath,
       job.wcagLevel
     );
@@ -361,6 +361,7 @@ app.post('/api/remediate/:jobId', requireValidJobId, async (req, res) => {
     const remediationResult = await remediationService.remediate(filePath, issues, {
       autoFix,
       jobId,
+      context: { ...context, originalFilename: job.originalFilename },
     });
 
     const reportPath = await reportGenerator.generateReport({

@@ -63,12 +63,13 @@ Docubil checks a focused subset of WCAG that can be tested automatically in a PD
 ## What gets fixed automatically
 
 ### ✅ Automatic fixes
-- Document language (`/Lang`)
-- Showing the document title in the viewer's title bar
-- Missing document title and subject metadata
-- Form field tooltips (`/TU`)
+Only where the document itself provides the answer. Otherwise the issue stays open and the report says why.
 
-Known limitations of these fixes (a hard-coded language, placeholder titles, tooltips built from field names) are being fixed in [Phase 6 of the plan](PLAN.md#phase-6--accuracy-baseline).
+- Document language (`/Lang`), when the text makes it clear
+- A missing title, taken from the document's first heading or a readable file name
+- Showing the document title in the viewer's title bar
+- The tagged-PDF flag, for documents that have tags but don't declare them
+- Form field tooltips (`/TU`), from field names that read as labels
 
 ### ⚠️ Flagged for manual review
 - Tagging and document structure (headings, lists, tables): adding real tags needs a person or an authoring tool

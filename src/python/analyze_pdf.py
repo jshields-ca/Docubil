@@ -9,6 +9,8 @@ import sys
 import json
 import os
 
+from pdf_structure import collect_figures, has_tooltip, iter_terminal_fields
+
 
 def compute_relative_luminance(r, g, b):
     """Compute WCAG 2.1 relative luminance from 0-255 sRGB values."""
@@ -27,11 +29,13 @@ def contrast_ratio(l1, l2):
 def analyze(pdf_path):
     result = {
         "isTagged": False,
+        "hasStructTree": False,
         "hasLanguage": False,
         "language": None,
         "hasBookmarks": False,
         "pdfVersion": None,
         "imagePages": [],
+        "figures": [],
         "formFields": [],
         "textAnalysis": {
             "possibleHeadings": [],
@@ -63,6 +67,14 @@ def analyze(pdf_path):
                 except Exception:
                     pass
             result["isTagged"] = has_mark_info and has_struct_tree
+            result["hasStructTree"] = has_struct_tree
+
+            # Figure elements and their alt text, from the structure tree.
+            # Alt text can only live there, so an untagged PDF has none.
+            try:
+                result["figures"] = collect_figures(pdf)
+            except Exception as e:
+                result["errors"].append("Structure tree error: " + str(e))
 
             # Language
             if "/Lang" in pdf.Root:
@@ -94,13 +106,7 @@ def analyze(pdf_path):
                                 try:
                                     xobj = xobjects[name]
                                     if xobj.get("/Subtype") == "/Image":
-                                        page_images.append({
-                                            "name": str(name),
-                                            # Alt text requires StructTree traversal;
-                                            # conservatively assume missing until proven otherwise
-                                            "hasAlt": False,
-                                            "altText": None,
-                                        })
+                                        page_images.append({"name": str(name)})
                                 except Exception:
                                     pass
                 except Exception:
@@ -112,27 +118,18 @@ def analyze(pdf_path):
                     "images": page_images,
                 })
 
-            # Form fields from AcroForm
+            # Every terminal form field, however deeply nested
             if "/AcroForm" in pdf.Root:
                 try:
-                    acroform = pdf.Root["/AcroForm"]
-                    if "/Fields" in acroform:
-                        for field_ref in acroform["/Fields"]:
-                            try:
-                                name = str(field_ref.get("/T", ""))
-                                tooltip = str(field_ref.get("/TU", ""))
-                                has_tooltip = bool(
-                                    tooltip and tooltip not in ("None", "null", "")
-                                )
-                                result["formFields"].append({
-                                    "name": name,
-                                    "hasTooltip": has_tooltip,
-                                    "tooltip": tooltip if has_tooltip else None,
-                                })
-                            except Exception:
-                                pass
-                except Exception:
-                    pass
+                    for name, field in iter_terminal_fields(pdf.Root["/AcroForm"]):
+                        tooltip = str(field.get("/TU")) if has_tooltip(field) else None
+                        result["formFields"].append({
+                            "name": name,
+                            "hasTooltip": tooltip is not None,
+                            "tooltip": tooltip,
+                        })
+                except Exception as e:
+                    result["errors"].append("Form field error: " + str(e))
 
     except ImportError:
         result["errors"].append("pikepdf not installed - run: pip install pikepdf")

@@ -11,7 +11,9 @@ class AccessibilityAnalyzer {
 
   /**
    * Analyze a PDF for accessibility issues against WCAG 2.1 AA or AAA.
-   * Returns { issues: Array, pythonEnhanced: boolean }.
+   * Returns { issues: Array, pythonEnhanced: boolean, context: object }.
+   * `context` carries facts about the document that remediation can use
+   * instead of guessing: its text and its likely headings.
    *
    * When Python libraries (pikepdf, pdfplumber) are available the analysis
    * is authoritative.  When they are not, the analysis falls back to
@@ -56,7 +58,12 @@ class AccessibilityAnalyzer {
       'Accessibility analysis complete'
     );
 
-    return { issues, pythonEnhanced };
+    const context = {
+      textContent: pdfInfo.textContent,
+      possibleHeadings: py?.textAnalysis?.possibleHeadings || [],
+    };
+
+    return { issues, pythonEnhanced, context };
   }
 
   // ─── Individual checks ──────────────────────────────────────────────────────
@@ -115,24 +122,79 @@ class AccessibilityAnalyzer {
       return issues;
     }
 
-    for (const pageDatum of py.imagePages) {
-      if (pageDatum.imageCount > 0) {
-        issues.push({
-          id: `alt-text-p${pageDatum.page}`,
-          wcagRule: '1.1.1',
-          severity: 'critical',
-          title: `Page ${pageDatum.page}: ${pageDatum.imageCount} image(s) detected — alt text unverified`,
-          description:
-            `${pageDatum.imageCount} image XObject(s) detected on page ${pageDatum.page}. ` +
-            'Verifying whether alt text is embedded requires a full PDF/UA structure tree traversal; ' +
-            'provide descriptive alt text for all meaningful images.',
-          element: 'Image',
-          page: pageDatum.page,
-          fixable: false,
-          impact: 'Screen reader users cannot understand image content without alt text',
-          confident: true,
-        });
+    const imageCount = py.imagePages.reduce((sum, p) => sum + p.imageCount, 0);
+
+    // Alt text lives on Figure elements in the structure tree, so an untagged
+    // document's images have none, for certain.
+    if (!py.hasStructTree) {
+      for (const pageDatum of py.imagePages) {
+        if (pageDatum.imageCount > 0) {
+          issues.push({
+            id: `alt-text-p${pageDatum.page}`,
+            wcagRule: '1.1.1',
+            severity: 'critical',
+            title: `Page ${pageDatum.page}: ${pageDatum.imageCount} image(s) without alt text`,
+            description:
+              `${pageDatum.imageCount} image(s) on page ${pageDatum.page} have no alternative text. ` +
+              'The document isn\'t tagged, and alt text can only be attached to tagged figures. ' +
+              'Tag the document, then describe each meaningful image (or mark it decorative).',
+            element: 'Image',
+            page: pageDatum.page,
+            fixable: false,
+            impact: 'Screen reader users cannot understand image content without alt text',
+            confident: true,
+          });
+        }
       }
+      return issues;
+    }
+
+    const figures = py.figures || [];
+    const missingByPage = new Map();
+    for (const figure of figures) {
+      if (!figure.hasAlt) {
+        const page = figure.page ?? 'unknown';
+        missingByPage.set(page, (missingByPage.get(page) || 0) + 1);
+      }
+    }
+    for (const [page, count] of missingByPage) {
+      issues.push({
+        id: `alt-text-p${page}`,
+        wcagRule: '1.1.1',
+        severity: 'critical',
+        title: page === 'unknown'
+          ? `${count} tagged figure(s) without alt text`
+          : `Page ${page}: ${count} tagged figure(s) without alt text`,
+        description:
+          `${count} Figure element(s) in the structure tree have neither /Alt nor /ActualText. ` +
+          'Describe each meaningful image, or re-tag decorative ones as artifacts.',
+        element: 'Image',
+        page: page === 'unknown' ? 'Unknown' : page,
+        fixable: false,
+        impact: 'Screen reader users cannot understand image content without alt text',
+        confident: true,
+      });
+    }
+
+    // Tagged, with images, but no Figure elements at all: the images may be
+    // decorative artifacts (fine) or untagged content (not fine). Say so
+    // rather than guess either way.
+    if (figures.length === 0 && imageCount > 0) {
+      issues.push({
+        id: 'alt-text-untagged-images',
+        wcagRule: '1.1.1',
+        severity: 'moderate',
+        title: `${imageCount} image(s) not tagged as figures`,
+        description:
+          'The document is tagged, but none of its images are tagged as figures. If they are ' +
+          'decorative they should be artifacts; if they convey meaning they need Figure tags ' +
+          'with alt text. Check them in a PDF editor\'s tags or reading-order panel.',
+        element: 'Image',
+        page: 'All',
+        fixable: false,
+        impact: 'Meaningful images may be skipped by screen readers',
+        confident: false,
+      });
     }
 
     return issues;

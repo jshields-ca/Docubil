@@ -5,6 +5,7 @@ const path = require('path');
 const { PDFDocument } = require('pdf-lib');
 const { v4: uuidv4 } = require('uuid');
 const { remediatePDF } = require('./PythonBridge');
+const { detectLanguage } = require('./languageDetect');
 const logger = require('../logger');
 
 class RemediationService {
@@ -28,11 +29,13 @@ class RemediationService {
    *
    * @param {string}  filePath  - Path to the original uploaded PDF.
    * @param {Array}   issues    - Issue objects from AccessibilityAnalyzer.
-   * @param {object}  options   - { autoFix: boolean, jobId: string }
+   * @param {object}  options   - { autoFix: boolean, jobId: string, context: object }
+   *   context (all optional) is what the fixes may draw on instead of guessing:
+   *   { textContent, possibleHeadings: [{ text }], originalFilename }.
    * @returns {Promise<object>} Remediation result.
    */
   async remediate(filePath, issues, options = {}) {
-    const { autoFix = true, jobId } = options;
+    const { autoFix = true, jobId, context = {} } = options;
 
     logger.info({ filePath, issueCount: issues.length, autoFix }, 'Starting remediation');
 
@@ -49,7 +52,7 @@ class RemediationService {
       const pdfDoc = await PDFDocument.load(dataBuffer, { ignoreEncryption: true });
 
       const metadataIssues = issues.filter((i) => i.id.startsWith('metadata-'));
-      this._applyMetadataFixes(pdfDoc, metadataIssues, fixedIssues);
+      this._applyMetadataFixes(pdfDoc, metadataIssues, fixedIssues, context);
 
       pdfBytes = await pdfDoc.save();
     } catch (err) {
@@ -62,7 +65,7 @@ class RemediationService {
 
     // ── Step 2: Python/pikepdf structural pass ──────────────────────────────────
     if (autoFix) {
-      const pythonFixes = this._buildPythonFixes(issues);
+      const pythonFixes = this._buildPythonFixes(issues, context);
       const hasPythonWork = Object.keys(pythonFixes).length > 0;
 
       if (hasPythonWork) {
@@ -71,7 +74,7 @@ class RemediationService {
 
           if (pyResult.success) {
             // Map applied fix descriptions back to issue IDs
-            this._reconcilePythonFixes(issues, pyResult.fixesApplied, fixedIssues);
+            this._reconcilePythonFixes(issues, pyResult, pythonFixes, fixedIssues, remainingIssues);
           } else {
             logger.warn(
               { errors: pyResult.errors },
@@ -92,7 +95,8 @@ class RemediationService {
     // ── Step 3: Categorise remaining issues ────────────────────────────────────
     for (const issue of issues) {
       const alreadyFixed = fixedIssues.some((f) => f.id === issue.id);
-      if (alreadyFixed) { continue; }
+      const alreadyRemaining = remainingIssues.some((r) => r.id === issue.id);
+      if (alreadyFixed || alreadyRemaining) { continue; }
 
       let reason;
       if (!autoFix) {
@@ -106,6 +110,15 @@ class RemediationService {
           'which must be done in a PDF authoring tool (Adobe Acrobat Pro, Foxit, etc.)';
       } else if (issue.id.startsWith('heading-')) {
         reason = 'Heading structure must be established in the source document and re-exported';
+      } else if (issue.id === 'language-001') {
+        reason = 'The document language could not be determined with confidence from its text. ' +
+          'Set it in your PDF editor (Document Properties → Advanced → Language)';
+      } else if (issue.id === 'metadata-001') {
+        reason = 'No heading or meaningful file name to take a title from. Add a descriptive ' +
+          'title in your PDF editor (Document Properties → Description → Title)';
+      } else if (issue.id === 'metadata-002') {
+        reason = 'A subject has to describe this particular document, so Docubil leaves it ' +
+          'for you to write';
       } else if (!issue.fixable) {
         reason = 'This issue requires manual review and cannot be automatically corrected';
       } else {
@@ -141,51 +154,49 @@ class RemediationService {
   // ─── Private helpers ────────────────────────────────────────────────────────
 
   /**
-   * Apply title, subject, and producer metadata via pdf-lib.
-   * These are genuine changes that AT and document management systems use.
+   * Apply metadata fixes via pdf-lib. A title is taken from the document
+   * itself, never invented; the subject is left for a person to write.
    */
-  _applyMetadataFixes(pdfDoc, metadataIssues, fixedIssues) {
+  _applyMetadataFixes(pdfDoc, metadataIssues, fixedIssues, context) {
     // Always stamp creator/producer so the tool is identified
     pdfDoc.setCreator('Docubil');
     pdfDoc.setProducer('Docubil Accessibility Remediation Service');
     pdfDoc.setModificationDate(new Date());
 
-    for (const issue of metadataIssues) {
-      if (issue.id === 'metadata-001') {
-        pdfDoc.setTitle('Accessible Document');
-        fixedIssues.push({
-          ...issue,
-          fixApplied: 'Document title set',
-          fixDetails:
-            'Set PDF /Title metadata to "Accessible Document". Update with a descriptive title ' +
-            'matching the document content.',
-        });
-      } else if (issue.id === 'metadata-002') {
-        pdfDoc.setSubject('Document processed for accessibility compliance');
-        fixedIssues.push({
-          ...issue,
-          fixApplied: 'Document subject set',
-          fixDetails: 'Set PDF /Subject metadata describing accessibility processing.',
-        });
-      }
+    if (!metadataIssues.some((issue) => issue.id === 'metadata-001')) {
+      return;
     }
+    const derived = deriveTitle(context);
+    if (!derived) {
+      return;
+    }
+    pdfDoc.setTitle(derived.title);
+    fixedIssues.push({
+      ...metadataIssues.find((issue) => issue.id === 'metadata-001'),
+      fixApplied: `Document title set to "${derived.title}"`,
+      fixDetails:
+        `Set the PDF /Title from ${derived.source}. Check that it describes the document, ` +
+        'and change it in your PDF editor if not.',
+    });
   }
 
   /**
    * Determine which fixes Python should apply based on the outstanding issues.
    */
-  _buildPythonFixes(issues) {
+  _buildPythonFixes(issues, context = {}) {
     const fixes = {};
     const ids = new Set(issues.map((i) => i.id));
 
     if (ids.has('language-001')) {
-      fixes.setLanguage = 'en';
+      const lang = detectLanguage(context.textContent);
+      if (lang) {
+        fixes.setLanguage = lang;
+      }
     }
 
     if (ids.has('structure-001')) {
-      // Set MarkInfo/Marked=true and DisplayDocTitle for better AT compatibility.
-      // Note: this is a formal flag, not a full PDF/UA structure tree — we are
-      // transparent about this in the fix description.
+      // Python only sets MarkInfo/Marked when a structure tree exists; on an
+      // untagged document it reports the fix as skipped instead.
       fixes.markTagged = true;
       fixes.displayDocTitle = true;
     } else if (ids.has('metadata-001')) {
@@ -205,54 +216,67 @@ class RemediationService {
   }
 
   /**
-   * After Python runs, mark the corresponding issues as fixed.
+   * After Python runs, mark as fixed only the issues whose fix was actually
+   * applied, and explain the ones Python skipped.
    */
-  _reconcilePythonFixes(issues, appliedDescriptions, fixedIssues) {
+  _reconcilePythonFixes(issues, pyResult, pythonFixes, fixedIssues, remainingIssues) {
+    const applied = pyResult.fixesApplied || [];
+    const skipped = pyResult.skipped || [];
+    const tooltipFields = new Set(pyResult.tooltipFields || []);
+
     for (const issue of issues) {
       const alreadyFixed = fixedIssues.some((f) => f.id === issue.id);
       if (alreadyFixed) { continue; }
 
-      let matched = false;
-
-      if (issue.id === 'language-001' &&
-          appliedDescriptions.some((d) => d.toLowerCase().includes('language'))) {
+      if (issue.id === 'language-001' && pythonFixes.setLanguage &&
+          applied.some((d) => d.toLowerCase().includes('language'))) {
         fixedIssues.push({
           ...issue,
-          fixApplied: 'Document language set to English (en)',
-          fixDetails: 'Set PDF catalog /Lang = "en". Screen readers will now select the correct voice profile.',
-        });
-        matched = true;
-      }
-
-      if (issue.id === 'structure-001' &&
-          appliedDescriptions.some((d) => d.includes('MarkInfo'))) {
-        fixedIssues.push({
-          ...issue,
-          fixApplied: 'MarkInfo/Marked flag set; DisplayDocTitle enabled',
+          fixApplied: `Document language set to "${pythonFixes.setLanguage}"`,
           fixDetails:
-            'Set /MarkInfo/Marked = true (signals structured content to AT) and ' +
-            '/ViewerPreferences/DisplayDocTitle = true (shows title in viewer title bar). ' +
-            'Note: a full PDF/UA structure tree was not added — complex documents should be ' +
-            're-authored in a tool such as Adobe Acrobat Pro for complete tagging.',
+            `Detected the language from the document's text and set the PDF catalog /Lang to ` +
+            `"${pythonFixes.setLanguage}", so screen readers use the right voice and pronunciation.`,
         });
-        matched = true;
       }
 
-      if ((issue.id.startsWith('form-tooltip-') || issue.id === 'form-001') &&
-          appliedDescriptions.some((d) => d.toLowerCase().includes('tooltip'))) {
-        fixedIssues.push({
-          ...issue,
-          fixApplied: 'Accessible tooltip (/TU) added to form field',
-          fixDetails:
-            'Added /TU (user-visible tooltip) entry to form fields that lacked one. ' +
-            'Review generated tooltips and replace with field-specific descriptions.',
-        });
-        matched = true;
+      if (issue.id === 'structure-001') {
+        if (applied.some((d) => d.includes('MarkInfo'))) {
+          fixedIssues.push({
+            ...issue,
+            fixApplied: 'Tagged-PDF flag set; DisplayDocTitle enabled',
+            fixDetails:
+              'The document already had a structure tree but did not declare it. Set ' +
+              '/MarkInfo/Marked = true so assistive technology uses those tags, and ' +
+              '/ViewerPreferences/DisplayDocTitle = true.',
+          });
+        } else if (skipped.some((d) => d.includes('MarkInfo'))) {
+          remainingIssues.push({
+            ...issue,
+            reason:
+              'The document has no tags at all. Tagging needs a person, or re-exporting from ' +
+              'the source application with "tagged PDF" or "accessibility" turned on',
+          });
+        }
       }
 
-      if (!matched && issue.id === 'metadata-001' &&
-          appliedDescriptions.some((d) => d.includes('DisplayDocTitle'))) {
-        // DisplayDocTitle fix is a bonus — metadata-001 already handled by pdf-lib
+      if (issue.id.startsWith('form-tooltip-')) {
+        const fieldName = issue.id.slice('form-tooltip-'.length);
+        if (tooltipFields.has(fieldName)) {
+          fixedIssues.push({
+            ...issue,
+            fixApplied: 'Tooltip (/TU) added from the field\'s name',
+            fixDetails:
+              'The field\'s name was readable, so it was used as the tooltip screen readers ' +
+              'announce. Check it matches the label people see on the form.',
+          });
+        } else {
+          remainingIssues.push({
+            ...issue,
+            reason:
+              'The field\'s internal name doesn\'t describe it, so no tooltip was generated. ' +
+              'Add one in your PDF editor (field Properties → General → Tooltip)',
+          });
+        }
       }
     }
   }
@@ -272,4 +296,31 @@ class RemediationService {
   }
 }
 
+/**
+ * A title taken from the document itself: its first heading, else its file
+ * name when that reads like words. Returns null rather than inventing one.
+ */
+function deriveTitle(context = {}) {
+  const heading = (context.possibleHeadings || [])
+    .map((h) => (h.text || '').replace(/\s+/g, ' ').trim())
+    .find((text) => text.length >= 3 && text.length <= 120 && /\p{L}{3}/u.test(text));
+  if (heading) {
+    return { title: heading, source: 'the document\'s first heading' };
+  }
+
+  const name = (context.originalFilename || '')
+    .replace(/\.pdf$/i, '')
+    .replace(/[_\-.]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // "scan0001", "document", "untitled", a UUID or a date say nothing
+  const meaningless = /^(scan|document|untitled|file|download|print|img|image|doc)?\s*[\d\s]*$/i;
+  const words = name.match(/\p{L}{3,}/gu) || [];
+  if (name && !meaningless.test(name) && words.length >= 1 && !/^[0-9a-f]{8} [0-9a-f]{4}/i.test(name)) {
+    return { title: name, source: 'its file name' };
+  }
+  return null;
+}
+
 module.exports = RemediationService;
+module.exports.deriveTitle = deriveTitle;
