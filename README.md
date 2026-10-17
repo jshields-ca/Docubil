@@ -101,10 +101,20 @@ The next big step moves all analysis and remediation **into your browser** ([D-0
 ```bash
 git clone https://github.com/jshields-ca/Docubil.git
 cd Docubil
-npm install
-pip install -r requirements.txt
-cp .env.example .env   # edit as needed
+./install.sh
 ```
+
+`install.sh` installs for your user only, with no `sudo` and nothing written
+outside the folder. It installs the Node packages, builds the web interface,
+creates a Python virtual environment in `.venv/` for `pikepdf` and
+`pdfplumber`, and writes a `.env` that points at it. Node.js itself can be
+installed without admin rights from the `.tar.xz`/`.zip` downloads on
+nodejs.org. Prefer to do it by hand? `npm install`, then
+`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`, then
+copy `.env.example` to `.env` and set `PYTHON_PATH=.venv/bin/python`.
+
+> A fully installable, offline, no-server version is the goal of
+> [Phase 7](PLAN.md#phase-7--browser-first-core-and-installable-app).
 
 ### Run it
 

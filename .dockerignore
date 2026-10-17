@@ -32,3 +32,6 @@ docs
 tests
 **/__pycache__
 *.pyc
+
+# Project-local Python environment (install.sh)
+.venv

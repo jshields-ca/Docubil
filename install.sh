@@ -1,87 +1,62 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Installs Docubil from a source checkout for the current user only: no sudo,
+# nothing written outside this directory. Node packages go in node_modules/,
+# Python packages in a project-local virtual environment (.venv/), and .env
+# points the server at that environment.
+#
+#   ./install.sh          install, then print how to start
+#   ./install.sh --start  install, then start the server
+set -euo pipefail
 
-# PDF Accessibility Tool Installation Script
-echo "🔧 Installing Docubil..."
+cd "$(dirname "$0")"
 
-# Check if Node.js is installed
-if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed. Please install Node.js 16+ first."
-    echo "Visit: https://nodejs.org/"
-    exit 1
-fi
+fail() { echo "✗ $*" >&2; exit 1; }
 
-# Check Node.js version
-NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -lt 16 ]; then
-    echo "❌ Node.js version 16+ is required. Current version: $(node -v)"
-    exit 1
-fi
+# ── Prerequisites ────────────────────────────────────────────────────────────
+command -v node >/dev/null || fail "Node.js 24 or newer is required: https://nodejs.org/ (the .tar.xz/.zip downloads need no admin rights)"
+NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]')
+[ "$NODE_MAJOR" -ge 24 ] || fail "Node.js 24 or newer is required (found $(node -v))."
+command -v npm >/dev/null || fail "npm is required (it ships with Node.js)."
 
-# Check if Python is installed
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 is not installed. Please install Python 3.8+ first."
-    exit 1
-fi
+PYTHON=${PYTHON:-python3}
+command -v "$PYTHON" >/dev/null || fail "Python 3.11 or newer is required (set PYTHON=/path/to/python3 to use another)."
+"$PYTHON" -c 'import sys; sys.exit(sys.version_info < (3, 11))' \
+  || fail "Python 3.11 or newer is required (found $("$PYTHON" --version 2>&1))."
+"$PYTHON" -c 'import venv' 2>/dev/null \
+  || fail "Python's venv module is missing (on Debian/Ubuntu it's the python3-venv package)."
 
-# Check if npm is installed
-if ! command -v npm &> /dev/null; then
-    echo "❌ npm is not installed. Please install npm first."
-    exit 1
-fi
+echo "✓ Node $(node -v), $("$PYTHON" --version 2>&1)"
 
-echo "✅ Prerequisites check passed"
+# ── Dependencies ─────────────────────────────────────────────────────────────
+echo "→ Installing Node packages"
+npm ci --no-audit --no-fund --ignore-scripts
 
-# Install Node.js dependencies
-echo "📦 Installing Node.js dependencies..."
-npm install
+echo "→ Building the web interface"
+npm run build
 
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to install Node.js dependencies"
-    exit 1
-fi
+echo "→ Creating a Python environment in .venv/"
+[ -x .venv/bin/python ] || "$PYTHON" -m venv .venv
+.venv/bin/python -m pip install --quiet --upgrade pip
+.venv/bin/python -m pip install --quiet -r requirements.txt
 
-# Install Python dependencies
-echo "📦 Installing Python dependencies..."
-pip3 install -r requirements.txt
-
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to install Python dependencies"
-    echo "💡 Try: pip3 install --user -r requirements.txt"
-    exit 1
-fi
-
-# Create necessary directories
-echo "📁 Creating directories..."
-mkdir -p uploads output reports logs
-
-# Create environment file if it doesn't exist
+# ── Configuration ────────────────────────────────────────────────────────────
 if [ ! -f .env ]; then
-    echo "⚙️ Creating environment configuration..."
-    cp .env.example .env
-    echo "✅ Created .env file - please review and modify as needed"
+  cp .env.example .env
+  echo "→ Created .env from .env.example"
 fi
+VENV_PYTHON="$(pwd)/.venv/bin/python"
+if grep -q '^PYTHON_PATH=' .env; then
+  sed -i.bak "s|^PYTHON_PATH=.*|PYTHON_PATH=$VENV_PYTHON|" .env && rm -f .env.bak
+else
+  echo "PYTHON_PATH=$VENV_PYTHON" >> .env
+fi
+mkdir -p uploads output reports
 
-# Set permissions
-chmod +x install.sh
-chmod 755 uploads output reports logs
-
-echo ""
-echo "🎉 Installation completed successfully!"
-echo ""
-echo "📋 Next steps:"
-echo "1. Review and edit .env file if needed"
-echo "2. Start the application:"
-echo "   npm start"
-echo ""
-echo "3. Open your browser to:"
-echo "   http://localhost:3000"
-echo ""
-echo "🚀 Ready to make PDFs accessible!"
-
-# Optional: Start the application
-read -p "🤔 Would you like to start the application now? (y/n): " -n 1 -r
+PORT=$(grep -E '^PORT=' .env | cut -d= -f2 | tr -d ' ' || true)
 echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "🚀 Starting Docubil..."
-    npm start
+echo "✓ Docubil is installed. Start it with:  npm start"
+echo "  then open http://localhost:${PORT:-3000}"
+
+if [ "${1:-}" = "--start" ]; then
+  exec npm start
 fi
