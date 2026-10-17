@@ -58,6 +58,6 @@ The best source is a **Wrong result** issue. For each one:
 ## Coverage gaps
 
 Phase 6 aims for about 30 documents. Not covered yet: scanned (image-only)
-pages, signed and encrypted files, right-to-left text, tables, lists, a 100+
+pages, signed files (encrypted ones are covered by `tests/encryption.test.js`), right-to-left text, tables, lists, a 100+
 page document, and the PDF Association's PDF/UA reference suite (pending a
 license check).

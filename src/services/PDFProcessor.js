@@ -124,10 +124,27 @@ class PDFProcessor {
       }
 
       const dataBuffer = await fs.readFile(filePath);
-      await PDFDocument.load(dataBuffer, { ignoreEncryption: true });
-      return { isValid: true, errors: [] };
+      const pdfDoc = await PDFDocument.load(dataBuffer, { ignoreEncryption: true });
+      const encrypted = pdfDoc.isEncrypted;
+      const needsPassword = encrypted && (await this._needsPassword(dataBuffer));
+      return { isValid: true, errors: [], encrypted, needsPassword };
     } catch (error) {
       return { isValid: false, errors: [error.message] };
+    }
+  }
+
+  /**
+   * Whether an encrypted PDF needs a password just to open it (a "user"
+   * password), as opposed to only restricting what can be done with it.
+   * pdf.js (inside pdf-parse) opens restriction-only files with an empty
+   * password and refuses the others.
+   */
+  async _needsPassword(dataBuffer) {
+    try {
+      await pdfParse(new Uint8Array(dataBuffer), { max: 1 });
+      return false;
+    } catch (error) {
+      return /password/i.test(error.message || '') || error.name === 'PasswordException';
     }
   }
 }

@@ -233,7 +233,7 @@ app.use('/api/analyze', (req, _res, next) => {
  *       200:
  *         description: Analysis complete
  *       400:
- *         description: Bad request (no file, wrong type, too large)
+ *         description: Bad request (no file, wrong type, too large, or password-protected)
  *       500:
  *         description: Internal error
  */
@@ -256,6 +256,14 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
       return res.status(400).json({
         error: 'Uploaded file is not a valid PDF',
         details: IS_PROD ? undefined : validation.errors,
+      });
+    }
+    if (validation.needsPassword) {
+      await fs.unlink(filePath).catch(() => {});
+      return res.status(400).json({
+        error:
+          'This PDF is password-protected, so it can\'t be checked. Open it with its password, ' +
+          'save a copy without one, and upload that copy.',
       });
     }
 
@@ -331,6 +339,8 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
  *         description: Remediation complete
  *       404:
  *         description: Job or PDF not found
+ *       422:
+ *         description: The PDF is encrypted, so it won't be rewritten
  *       500:
  *         description: Internal error
  */
@@ -349,6 +359,19 @@ app.post('/api/remediate/:jobId', requireValidJobId, async (req, res) => {
       await fs.access(filePath);
     } catch {
       return res.status(404).json({ error: 'Original PDF no longer available' });
+    }
+
+    // pdf-lib can't decrypt, so rewriting an encrypted file produces one that
+    // won't open; removing the encryption would strip the author's settings.
+    const { encrypted } = await pdfProcessor.validatePDF(filePath);
+    if (encrypted) {
+      return res.status(422).json({
+        error:
+          'This PDF is encrypted (it has security restrictions), so Docubil won\'t change it: ' +
+          'doing so would break the file or remove its protection. The report above still ' +
+          'applies. To fix it, ask the author for an unrestricted copy, or remove the ' +
+          'restrictions yourself if you\'re allowed to.',
+      });
     }
 
     const { issues, pythonEnhanced, context } = await accessibilityAnalyzer.analyze(
