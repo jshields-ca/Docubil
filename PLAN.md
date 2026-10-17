@@ -38,7 +38,7 @@ criteria gets re-scoped here, in the open, rather than quietly declared done.
 |---|---|---|
 | 0–4 | Audit, governance, CI hardening, frontend rebuild, GHCR releases | ✅ Done (v0.1.0) |
 | 5 | Project foundations refresh | 🟡 In review |
-| 6 | Accuracy baseline | 🟡 Defects fixed, corpus started (13/~30) |
+| 6 | Accuracy baseline | 🟡 Defects fixed, corpus 23/~30 |
 | 7 | Browser-first core and installable app | Planned |
 | 8 | Free public site | Planned, D-010 proposed |
 | 9 | Windows desktop build | Conditional |
@@ -171,11 +171,12 @@ good).
 
 **Progress (2026-10-17):** the seven defects are fixed with regression tests
 (#51–#56; defect 6 by `tests/python/accuracy.test.js`). The corpus runner is
-in place (`npm run corpus`, part of `npm test`) with 13 documents across 9
+in place (`npm run corpus`, part of `npm test`) with 23 documents across 9
 checks, and all of them currently pass: zero false positives or negatives.
 The same corpus against the pre-fix code had 2 false positives and at least
 18 remediation failures. Remaining: grow the corpus to about 30 documents
-(gaps listed in `tests/corpus/README.md`), and `pdf-lib` → `@cantoo/pdf-lib`
+(gaps listed in `tests/corpus/README.md`: real-world exports from Word,
+InDesign and scanners matter most), and `pdf-lib` → `@cantoo/pdf-lib`
 once D-011 is decided.
 
 **Success criteria:**
