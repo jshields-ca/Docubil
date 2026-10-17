@@ -97,6 +97,12 @@ fails outright. Its **legacy build** works. Work computers often run
 managed, older browsers, so Docubil should ship the legacy build (or test
 the modern one against its browser-support floor in CI).
 
+### Download size
+
+Measured with Vite production builds (gzipped): pdf.js legacy build 144 KB
+plus its worker 382 KB, `pdf-lib` 175 KB (`@cantoo/pdf-lib` 244 KB), and the
+current UI 117 KB. **About 0.9 MB in all**, downloaded once and then cached.
+
 ## Still unproven (next steps before committing to the rewrite)
 
 - **Whole-process memory under a 4 GB limit,** and image-heavy *scanned*
@@ -107,7 +113,8 @@ the modern one against its browser-support floor in CI).
 - **`pdf-lib` itself is unmaintained** (last release 1.17.1, May 2022), and
   the server already depends on it. `@cantoo/pdf-lib` is an actively
   maintained fork with the same API, and the spike used it. It is the
-  recommended replacement in either architecture.
+  recommended replacement in either architecture, for +69 KB gzipped
+  ([D-011](../../DECISIONS.md#d-011)).
 - **Contrast against non-white backgrounds** still needs rendering
   (pdf.js can render to canvas, so this is possible in a browser in a way
   it isn't in today's Python layer).

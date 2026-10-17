@@ -181,7 +181,9 @@ site would cost a lot in bandwidth and processing.
 **Decision (proposed).** After D-007, host the built app as a static site
 (GitHub Pages or Cloudflare Pages, both free for this size). The user's own
 browser does the processing, so hosting cost doesn't grow with documents
-processed. Only the roughly 2–3 MB app is downloaded, once, then cached.
+processed. Each visitor downloads the app once, about 0.9 MB gzipped as
+measured (the UI 117 KB, pdf.js legacy build 144 + 382 KB, pdf-lib 175–244 KB),
+and then it's cached.
 
 **Consequences.** Needs a domain decision and a privacy statement that says,
 truthfully, "your files never leave your device". No analytics that could
@@ -199,9 +201,11 @@ spike ran on it without code changes.
 
 **Decision (proposed).** Swap it in at the start of Phase 6, behind the existing tests.
 
-**Consequences.** One dependency changes owner. It does pull in `culori` and
-`node-html-better-parser` for features we don't use, so check what it adds to
-the client bundle before switching.
+**Consequences.** One dependency changes owner. It also pulls in `culori` and
+`node-html-better-parser` for features we don't use. Measured in a Vite
+production build, it costs **+69 KB gzipped** (244 KB against 175 KB), about 8%
+of the whole browser app (~0.9 MB). That's the price of a maintained library
+instead of one with no release since 2022.
 
 ---
 
