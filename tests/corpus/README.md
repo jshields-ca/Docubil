@@ -35,6 +35,7 @@ in `files/` are committed only when their license allows it:
 | File | Source | License |
 |---|---|---|
 | `files/irs-f1040-2010.pdf` | IRS Form 1040 (2010), as prefilled in Mozilla pdf.js's test corpus | Public domain (US federal government work) |
+| `files/writer-*.pdf`, `files/chromium-*.pdf` | Exported by LibreOffice Writer 24.2 and Chromium 141 from our own text in `sources/` (regenerate with `sources/build.sh`) | AGPL-3.0-only (this repository) |
 
 ## Adding a document
 
@@ -57,10 +58,10 @@ The best source is a **Wrong result** issue. For each one:
 
 ## Coverage gaps
 
-Phase 6 aims for about 30 documents; there are 23. Every one so far is
-generated or a government form, so the biggest gap is **real-world exports**:
-Word, Google Docs, InDesign and scanner output, tagged and untagged, which is
-exactly what "Wrong result" reports should supply. Also not covered yet:
+Phase 6 aims for about 30 documents; there are 29. Six are real exports
+(LibreOffice Writer and Chromium, tagged and untagged). The biggest gap is
+files from **other tools**: Microsoft Word, Google Docs, InDesign and
+scanners. Those are exactly what "Wrong result" reports should supply. Also not covered yet:
 right-to-left text, tables, lists, multi-column layouts, and the PDF
 Association's PDF/UA reference suite (pending a license check). Signed and
 encrypted files are covered separately by `tests/signed.test.js` and
