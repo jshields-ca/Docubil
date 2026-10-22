@@ -9,6 +9,13 @@ import sys
 import json
 import os
 
+# The shared helpers live next to this script. Python normally puts the
+# script's folder on the import path, but not with PYTHONSAFEPATH=1 or -I,
+# so add it explicitly.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from pdf_structure import has_tooltip, human_label, iter_terminal_fields
+
 
 def remediate(input_path, output_path, fixes):
     """
@@ -16,13 +23,19 @@ def remediate(input_path, output_path, fixes):
 
     fixes dict keys (all optional, default False/None):
       setLanguage      (str)  - BCP-47 language tag to set as /Lang, e.g. "en"
-      markTagged       (bool) - Set MarkInfo/Marked = true
+      markTagged       (bool) - Set MarkInfo/Marked = true, only if the document
+                                actually has a structure tree
       displayDocTitle  (bool) - Set ViewerPreferences/DisplayDocTitle = true
-      formTooltips     (bool) - Add /TU tooltip to AcroForm fields that lack one
+      formTooltips     (bool) - Add a /TU tooltip to fields that lack one, where
+                                the field's name is a readable label
+
+    Fixes that can't be applied honestly are listed in "skipped" with a reason.
     """
     result = {
         "success": False,
         "fixesApplied": [],
+        "skipped": [],
+        "tooltipFields": [],
         "errors": [],
     }
 
@@ -36,7 +49,9 @@ def remediate(input_path, output_path, fixes):
         return result
 
     try:
-        with pikepdf.open(input_path, allow_overwriting_input=False) as pdf:
+        # RemediationService fixes the file in place (input and output are the
+        # same path), so pikepdf must be allowed to save over what it opened.
+        with pikepdf.open(input_path, allow_overwriting_input=True) as pdf:
 
             # -- Set document language --
             if fixes.get("setLanguage"):
@@ -47,13 +62,20 @@ def remediate(input_path, output_path, fixes):
                         "Set document language to '" + lang + "'"
                     )
 
-            # -- Mark document as tagged (formal flag; does not add StructTree) --
+            # -- Mark document as tagged --
+            # Only when tags exist: the flag tells assistive technology to trust
+            # the structure tree, so setting it on an untagged file is a false claim.
             if fixes.get("markTagged"):
-                if "/MarkInfo" not in pdf.Root:
-                    pdf.Root["/MarkInfo"] = pikepdf.Dictionary(Marked=True)
+                if "/StructTreeRoot" not in pdf.Root:
+                    result["skipped"].append(
+                        "MarkInfo/Marked not set: the document has no structure tree"
+                    )
                 else:
-                    pdf.Root["/MarkInfo"]["/Marked"] = True
-                result["fixesApplied"].append("Set MarkInfo/Marked = true")
+                    if "/MarkInfo" not in pdf.Root:
+                        pdf.Root["/MarkInfo"] = pikepdf.Dictionary(Marked=True)
+                    else:
+                        pdf.Root["/MarkInfo"]["/Marked"] = True
+                    result["fixesApplied"].append("Set MarkInfo/Marked = true")
 
             # -- Set DisplayDocTitle so title bar shows PDF title --
             if fixes.get("displayDocTitle"):
@@ -68,30 +90,28 @@ def remediate(input_path, output_path, fixes):
                 )
 
             # -- Add tooltips (/TU) to form fields that lack them --
+            # Only from a readable field name: "Please enter: p1-t3[0]" would be
+            # worse than nothing, so those fields stay flagged for a person.
             if fixes.get("formTooltips") and "/AcroForm" in pdf.Root:
                 try:
-                    acroform = pdf.Root["/AcroForm"]
-                    if "/Fields" in acroform:
-                        count = 0
-                        for field_ref in acroform["/Fields"]:
-                            try:
-                                existing_tu = field_ref.get("/TU")
-                                has_tu = bool(
-                                    existing_tu
-                                    and str(existing_tu) not in ("None", "null", "")
-                                )
-                                if not has_tu:
-                                    name = str(field_ref.get("/T", f"Field {count + 1}"))
-                                    field_ref["/TU"] = pikepdf.String(
-                                        "Please enter: " + name
-                                    )
-                                    count += 1
-                            except Exception:
-                                pass
-                        if count > 0:
-                            result["fixesApplied"].append(
-                                f"Added tooltips to {count} form field(s)"
-                            )
+                    unlabelled = 0
+                    for name, field in iter_terminal_fields(pdf.Root["/AcroForm"]):
+                        if has_tooltip(field):
+                            continue
+                        label = human_label(name)
+                        if label is None:
+                            unlabelled += 1
+                            continue
+                        field["/TU"] = pikepdf.String(label)
+                        result["tooltipFields"].append(name)
+                    if result["tooltipFields"]:
+                        result["fixesApplied"].append(
+                            f"Added tooltips to {len(result['tooltipFields'])} form field(s)"
+                        )
+                    if unlabelled:
+                        result["skipped"].append(
+                            f"{unlabelled} form field(s) have no readable name to use as a tooltip"
+                        )
                 except Exception as e:
                     result["errors"].append("Form tooltip fix error: " + str(e))
 

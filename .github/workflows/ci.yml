@@ -124,8 +124,27 @@ jobs:
         with:
           context: .
           push: false
+          load: true
+          tags: docubil:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Start it the way docker-compose.release.yml does (a fresh named volume
+      # at /data, running as the image's non-root user) and wait for /health.
+      # Catches startup failures a build alone can't, such as /data
+      # permissions on a first install.
+      - name: Smoke test the image
+        run: |
+          docker run -d --name smoke -p 3000:3000 \
+            -e UPLOAD_DIR=/data/uploads -e OUTPUT_DIR=/data/output \
+            -e REPORTS_DIR=/data/reports -e DB_PATH=/data/jobs.json \
+            -v smoke_data:/data docubil:ci
+          for i in $(seq 30); do
+            if curl -fsS http://localhost:3000/health; then exit 0; fi
+            sleep 2
+          done
+          docker logs smoke
+          exit 1
 
   # Only on the Version Packages PR (branch changeset-release/main, opened by
   # .github/workflows/release.yml): fails until that version's release

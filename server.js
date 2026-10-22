@@ -12,7 +12,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const pinoHttp = require('pino-http');
 const swaggerUi = require('swagger-ui-express');
-const { v4: uuidv4, validate: uuidValidate } = require('uuid');
+const { randomUUID } = require('crypto');
 
 const { version: APP_VERSION } = require('./package.json');
 const logger = require('./src/logger');
@@ -38,8 +38,34 @@ const FILE_RETENTION_MS =
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
+/**
+ * TRUST_PROXY → Express's `trust proxy` setting. Unset means the client
+ * address is the socket's, which is right without a reverse proxy; behind
+ * one it makes every user share one rate-limit bucket. A number is a hop
+ * count, `true`/`false` are booleans, anything else (addresses, subnets,
+ * `loopback`) is passed through as-is.
+ */
+function parseTrustProxy(value) {
+  if (value === undefined || value.trim() === '') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (/^\d+$/.test(trimmed)) {
+    return parseInt(trimmed, 10);
+  }
+  if (trimmed === 'true' || trimmed === 'false') {
+    return trimmed === 'true';
+  }
+  return trimmed;
+}
+const TRUST_PROXY = parseTrustProxy(process.env.TRUST_PROXY);
+
 // ─── Express app ─────────────────────────────────────────────────────────────
 const app = express();
+
+if (TRUST_PROXY !== undefined) {
+  app.set('trust proxy', TRUST_PROXY);
+}
 
 // HTTP request logging (suppressed in tests)
 if (process.env.NODE_ENV !== 'test') {
@@ -104,9 +130,14 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // ─── UUID validation middleware ───────────────────────────────────────────────
+// Same rule as the `uuid` package's validate(): RFC 9562 versions 1–8, plus
+// the nil and max UUIDs.
+const UUID_PATTERN =
+  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
+
 function requireValidJobId(req, res, next) {
   const { jobId } = req.params;
-  if (!jobId || !uuidValidate(jobId)) {
+  if (!jobId || !UUID_PATTERN.test(jobId)) {
     return res.status(400).json({ error: 'Invalid job ID format' });
   }
   next();
@@ -179,7 +210,7 @@ app.get('/', (_req, res) => {
 
 // ─── POST /api/analyze ────────────────────────────────────────────────────────
 app.use('/api/analyze', (req, _res, next) => {
-  req.jobId = uuidv4();
+  req.jobId = randomUUID();
   next();
 });
 
@@ -207,7 +238,7 @@ app.use('/api/analyze', (req, _res, next) => {
  *       200:
  *         description: Analysis complete
  *       400:
- *         description: Bad request (no file, wrong type, too large)
+ *         description: Bad request (no file, wrong type, too large, or password-protected)
  *       500:
  *         description: Internal error
  */
@@ -225,12 +256,20 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
 
     // Post-upload magic bytes check (catches MIME spoofing)
     const validation = await pdfProcessor.validatePDF(filePath);
-    if (!validation.isValid) {
+    if (!validation.isValid || validation.needsPassword) {
       await fs.unlink(filePath).catch(() => {});
-      return res.status(400).json({
-        error: 'Uploaded file is not a valid PDF',
-        details: IS_PROD ? undefined : validation.errors,
-      });
+      return res.status(400).json(
+        validation.isValid
+          ? {
+            error:
+              'This PDF is password-protected, so it can\'t be checked. Open it with its ' +
+              'password, save a copy without one, and upload that copy.',
+          }
+          : {
+            error: 'Uploaded file is not a valid PDF',
+            details: IS_PROD ? undefined : validation.errors,
+          }
+      );
     }
 
     // Persist job record
@@ -305,6 +344,8 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
  *         description: Remediation complete
  *       404:
  *         description: Job or PDF not found
+ *       422:
+ *         description: The PDF is encrypted or digitally signed, so it won't be rewritten
  *       500:
  *         description: Internal error
  */
@@ -325,7 +366,28 @@ app.post('/api/remediate/:jobId', requireValidJobId, async (req, res) => {
       return res.status(404).json({ error: 'Original PDF no longer available' });
     }
 
-    const { issues, pythonEnhanced } = await accessibilityAnalyzer.analyze(
+    // pdf-lib can't decrypt, so rewriting an encrypted file produces one that
+    // won't open; removing the encryption would strip the author's settings.
+    const { encrypted, signed } = await pdfProcessor.validatePDF(filePath);
+    if (signed) {
+      return res.status(422).json({
+        error:
+          'This PDF is digitally signed, so Docubil won\'t change it: any change invalidates the ' +
+          'signature. The report above still applies. Make the fixes in the unsigned original, ' +
+          'then sign it again.',
+      });
+    }
+    if (encrypted) {
+      return res.status(422).json({
+        error:
+          'This PDF is encrypted (it has security restrictions), so Docubil won\'t change it: ' +
+          'doing so would break the file or remove its protection. The report above still ' +
+          'applies. To fix it, ask the author for an unrestricted copy, or remove the ' +
+          'restrictions yourself if you\'re allowed to.',
+      });
+    }
+
+    const { issues, pythonEnhanced, context } = await accessibilityAnalyzer.analyze(
       filePath,
       job.wcagLevel
     );
@@ -335,6 +397,7 @@ app.post('/api/remediate/:jobId', requireValidJobId, async (req, res) => {
     const remediationResult = await remediationService.remediate(filePath, issues, {
       autoFix,
       jobId,
+      context: { ...context, originalFilename: job.originalFilename },
     });
 
     const reportPath = await reportGenerator.generateReport({

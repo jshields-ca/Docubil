@@ -48,13 +48,17 @@ RUN npm ci --omit=dev --ignore-scripts
 COPY . .
 COPY --from=frontend-builder /app/public ./public
 
-# Create runtime directories (volumes should be mounted here in production)
-RUN mkdir -p uploads output reports data logs
+# Create runtime directories. /data is where the compose files mount the
+# volume (UPLOAD_DIR, OUTPUT_DIR, REPORTS_DIR, DB_PATH all live under it). It
+# must exist in the image, owned by the app user: Docker copies a mount
+# point's ownership into a new named volume, and a root-owned /data stops
+# the non-root app from creating its directories on first start.
+RUN mkdir -p uploads output reports data logs /data
 
 # Drop privileges — run as non-root user
 RUN groupadd --gid 1001 appgroup && \
     useradd --uid 1001 --gid appgroup --no-create-home appuser && \
-    chown -R appuser:appgroup /app
+    chown -R appuser:appgroup /app /data
 
 USER appuser
 

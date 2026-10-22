@@ -4,7 +4,7 @@
  * Creates minimal but valid PDF buffers for use in tests.
  * Uses pdf-lib so no external dependencies are required.
  */
-const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
+const { PDFDocument, StandardFonts, rgb } = require('@cantoo/pdf-lib');
 
 /**
  * Create a simple single-page PDF with optional metadata and text.

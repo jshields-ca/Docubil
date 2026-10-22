@@ -16,6 +16,7 @@ Docubil brings PDF accessibility to any workspace, community, or use case. It an
 - [Quick start (Docker)](#quick-start-docker)
 - [Features](#features)
 - [What gets fixed automatically](#what-gets-fixed-automatically)
+- [Where Docubil is heading](#where-docubil-is-heading)
 - [Development setup](#development-setup)
 - [API](#api)
 - [Architecture](#architecture)
@@ -46,7 +47,7 @@ Want to build from source or contribute code instead? See [Development setup](#d
 
 - 🔍 **Automated PDF Analysis** — real WCAG evaluation via a Python bridge (pikepdf + pdfplumber), not a placeholder checklist
 - ♿ **WCAG 2.1 AA & AAA** — choose the compliance level per analysis
-- 🔧 **Automatic Remediation** — fixes what's safe to fix (metadata, tagging, language, form tooltips); honestly flags what needs a human (alt text, reading order, complex tables)
+- 🔧 **Automatic Remediation** — fixes what's safe to fix (document language, title display, form field tooltips); honestly flags what needs a human (alt text, reading order, tagging, complex tables)
 - 📊 **Detailed Reports** — HTML, JSON, and CSV export, with real per-issue severity and fix status
 - 🧭 **Interactive API Docs** — full OpenAPI 3.0 spec browsable at `/api/docs`
 - 🚀 **Modern, Accessible Frontend** — React + Vite + Tailwind CSS + Framer Motion, itself tested with `jest-axe` in CI so the tool practices what it preaches
@@ -54,25 +55,38 @@ Want to build from source or contribute code instead? See [Development setup](#d
 
 ## Supported Standards
 
-- **WCAG 2.1 AA** — standard compliance level required by most accessibility regulations
+- **WCAG 2.1 AA** — the level most accessibility regulations require
 - **WCAG 2.1 AAA** — enhanced accessibility with stricter requirements
-- **PDF/UA** — PDF Universal Accessibility compatibility
+
+Docubil checks a focused subset of WCAG that can be tested automatically in a PDF. It isn't a PDF/UA validator. For formal conformance, also run a dedicated checker such as [veraPDF](https://verapdf.org/) or [PAC](https://pac.pdf-accessibility.org/).
 
 ## What gets fixed automatically
 
 ### ✅ Automatic fixes
-- Missing document metadata (title, subject, language)
-- Basic document structure and tagging
-- Form field accessibility attributes (tooltips)
-- Document outline/bookmarks
+Only where the document itself provides the answer. Otherwise the issue stays open and the report says why.
+
+- Document language (`/Lang`), when the text makes it clear
+- A missing title, taken from the document's first heading or a readable file name
+- Showing the document title in the viewer's title bar
+- The tagged-PDF flag, for documents that have tags but don't declare them
+- Form field tooltips (`/TU`), from field names that read as labels
 
 ### ⚠️ Flagged for manual review
+- Tagging and document structure (headings, lists, tables): adding real tags needs a person or an authoring tool
 - Alternative text for images (needs human context)
 - Color contrast verification
 - Reading order and complex table structures
 - Context-specific content descriptions
 
 Docubil never silently claims a fix it didn't actually make — see `remainingIssuesDetail` in the [API](#api) response.
+
+## Where Docubil is heading
+
+The next big step moves all analysis and remediation **into your browser** ([D-007](DECISIONS.md#d-007)). Your PDFs will never leave your device, Docubil will install as an app without admin rights ([D-009](DECISIONS.md#d-009)), and a free public site will be able to offer the same privacy guarantee ([D-010](DECISIONS.md#d-010), proposed). Before that, [Phase 6](PLAN.md#phase-6--accuracy-baseline) builds a test corpus and fixes the known accuracy problems, so the rebuild can be shown to be at least as good.
+
+- [PLAN.md](PLAN.md): phases, scope, and success criteria
+- [DECISIONS.md](DECISIONS.md): what was decided, and why
+- [Browser-first spike](docs/spikes/browser-first.md): the evidence behind the direction
 
 ## Development setup
 
@@ -87,10 +101,20 @@ Docubil never silently claims a fix it didn't actually make — see `remainingIs
 ```bash
 git clone https://github.com/jshields-ca/Docubil.git
 cd Docubil
-npm install
-pip install -r requirements.txt
-cp .env.example .env   # edit as needed
+./install.sh
 ```
+
+`install.sh` installs for your user only, with no `sudo` and nothing written
+outside the folder. It installs the Node packages, builds the web interface,
+creates a Python virtual environment in `.venv/` for `pikepdf` and
+`pdfplumber`, and writes a `.env` that points at it. Node.js itself can be
+installed without admin rights from the `.tar.xz`/`.zip` downloads on
+nodejs.org. Prefer to do it by hand? `npm install`, then
+`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`, then
+copy `.env.example` to `.env` and set `PYTHON_PATH=.venv/bin/python`.
+
+> A fully installable, offline, no-server version is the goal of
+> [Phase 7](PLAN.md#phase-7--browser-first-core-and-installable-app).
 
 ### Run it
 
@@ -215,7 +239,7 @@ Analysis and remediation degrade gracefully: if the Python bridge is unavailable
 Copy `.env.example` to `.env` and adjust as needed — it documents every variable (server port, file size/retention limits, CORS origins, rate limiting, the Python interpreter path, log level). Key defaults:
 
 - **File upload**: 50 MB maximum, PDF files only (validated by magic bytes, not just extension)
-- **Rate limiting**: 100 requests per 15 minutes per IP (configurable)
+- **Rate limiting**: 100 requests per 15 minutes per IP (configurable). Behind a reverse proxy, set `TRUST_PROXY=1` (or your proxy's address) so each user is limited separately
 - **File cleanup**: uploaded/output files deleted after 24 hours by a scheduled job
 - **CORS**: allow-listed origins via `ALLOWED_ORIGINS`, not wide open by default in production
 - **CSP**: Helmet-managed Content Security Policy headers
@@ -235,15 +259,18 @@ See [RELEASING.md](RELEASING.md) if you're cutting a new release.
 **Manual Node deployment** — if you'd rather not use Docker, run the server directly behind a process manager and reverse proxy:
 
 ```bash
-NODE_ENV=production PORT=80 npm install -g pm2
-pm2 start server.js --name docubil
+npm ci --omit=dev
+npm run build
+NODE_ENV=production PORT=3000 node server.js
 ```
 
-Then configure nginx, Caddy, or similar to proxy requests to the Node process. You are responsible for the Python 3.11+ environment and dependencies in this path — the Docker image handles that for you.
+Keep it running with a process manager (systemd, pm2) and put nginx, Caddy, or similar in front of it for TLS.
+
+You are responsible for the Python 3.11+ environment and dependencies in this path — the Docker image handles that for you.
 
 ## Browser support
 
-Chrome 80+, Firefox 75+, Safari 13+, Edge 80+.
+Current versions of Chrome, Edge, Firefox, and Safari.
 
 ## How to contribute
 
@@ -251,14 +278,14 @@ Chrome 80+, Firefox 75+, Safari 13+, Edge 80+.
 2. Create a feature branch: `git checkout -b feature-name`
 3. Make your changes, with tests
 4. Run tests and lint (both `npm test && npm run lint` in the root **and** in `client/`)
-5. Commit using [Conventional Commits](https://www.conventionalcommits.org/) — `npx cz` will guide you — since PR titles become the changelog entry on merge
-6. Push and open a Pull Request
+5. If users would notice the change, add a changeset (`npx changeset`) describing it in plain language. It becomes the changelog entry.
+6. Push and open a Pull Request with a [Conventional Commits](https://www.conventionalcommits.org/) title (`feat: ...`, `fix: ...`)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide, [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community expectations, and [PLAN.md](PLAN.md) for the project roadmap and current phase.
 
 ## Community & support
 
-- [Open an issue](https://github.com/jshields-ca/Docubil/issues) for bugs or feature requests
+- [Open an issue](https://github.com/jshields-ca/Docubil/issues/new/choose) for bugs, wrong results, or feature requests
 - [Discussions](https://github.com/jshields-ca/Docubil/discussions) for Q&A and ideas
 - [Changelog](CHANGELOG.md) for release history
 - [SECURITY.md](SECURITY.md) for reporting a vulnerability privately

@@ -2,7 +2,7 @@
 
 const fs = require('fs').promises;
 const pdfParse = require('pdf-parse');
-const { PDFDocument } = require('pdf-lib');
+const { PDFDocument, PDFName } = require('@cantoo/pdf-lib');
 const logger = require('../logger');
 
 class PDFProcessor {
@@ -124,10 +124,43 @@ class PDFProcessor {
       }
 
       const dataBuffer = await fs.readFile(filePath);
-      await PDFDocument.load(dataBuffer, { ignoreEncryption: true });
-      return { isValid: true, errors: [] };
+      const pdfDoc = await PDFDocument.load(dataBuffer, { ignoreEncryption: true });
+      const encrypted = pdfDoc.isEncrypted;
+      const needsPassword = encrypted && (await this._needsPassword(dataBuffer));
+      const signed = !encrypted && this._isSigned(pdfDoc);
+      return { isValid: true, errors: [], encrypted, needsPassword, signed };
     } catch (error) {
       return { isValid: false, errors: [error.message] };
+    }
+  }
+
+  /**
+   * Whether any signature field holds a signature. Rewriting the file in any
+   * way invalidates it.
+   */
+  _isSigned(pdfDoc) {
+    try {
+      return pdfDoc.getForm().getFields().some((field) => {
+        const dict = field.acroField.dict;
+        return dict.get(PDFName.of('FT')) === PDFName.of('Sig') && dict.has(PDFName.of('V'));
+      });
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Whether an encrypted PDF needs a password just to open it (a "user"
+   * password), as opposed to only restricting what can be done with it.
+   * pdf.js (inside pdf-parse) opens restriction-only files with an empty
+   * password and refuses the others.
+   */
+  async _needsPassword(dataBuffer) {
+    try {
+      await pdfParse(new Uint8Array(dataBuffer), { max: 1 });
+      return false;
+    } catch (error) {
+      return /password/i.test(error.message || '') || error.name === 'PasswordException';
     }
   }
 }
