@@ -1,8 +1,16 @@
-blank_issues_enabled: false
+# Shown alongside the issue forms on "New issue", so questions and ideas go
+# to Discussions and security reports stay private.
+blank_issues_enabled: true
 contact_links:
-  - name: Security vulnerability
+  - name: Questions and help
+    url: https://github.com/jshields-ca/Docubil/discussions/categories/q-a
+    about: Setting something up, or not sure it's a bug? Ask in Discussions.
+  - name: Ideas and feedback
+    url: https://github.com/jshields-ca/Docubil/discussions/categories/ideas
+    about: Talk through an idea before it becomes a feature request.
+  - name: Roadmap and decisions
+    url: https://github.com/jshields-ca/Docubil/blob/main/PLAN.md
+    about: What's planned, what's done, and why (see also DECISIONS.md).
+  - name: Report a security vulnerability
     url: https://github.com/jshields-ca/Docubil/security/advisories/new
-    about: Please report security vulnerabilities privately — see SECURITY.md, not a public issue.
-  - name: Questions & discussion
-    url: https://github.com/jshields-ca/Docubil/discussions
-    about: For general questions or ideas, use Discussions rather than an issue.
+    about: Please report security problems privately, not as a public issue (see SECURITY.md).

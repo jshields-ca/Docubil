@@ -13,8 +13,8 @@ support branch yet.
 Instead, report it privately using
 [GitHub's private vulnerability reporting](https://github.com/jshields-ca/Docubil/security/advisories/new)
 for this repository (Security tab → "Report a vulnerability"). If that is
-unavailable to you, contact the maintainer directly through the contact
-method listed on their GitHub profile.
+unavailable to you, email the maintainer at
+[jeremy@scootr.ca](mailto:jeremy@scootr.ca).
 
 Please include:
 
@@ -22,6 +22,9 @@ Please include:
 - Steps to reproduce it (a minimal PDF or request that triggers it, if
   applicable)
 - Any suggested remediation, if you have one
+
+If reproducing the problem needs a PDF, attach it to the private advisory,
+never to a public issue.
 
 We aim to acknowledge reports within 5 business days and to provide a
 timeline for a fix once the issue is confirmed. We ask that you give us a
@@ -46,6 +49,10 @@ applies to any self-hosted instance running the default configuration:
   data protection obligations (e.g. GDPR) regarding files their users
   upload; Docubil provides the retention/cleanup mechanism but does not
   itself constitute compliance.
+
+Docubil is moving its processing into the browser
+([DECISIONS.md, D-007](DECISIONS.md#d-007)). Once that ships, documents won't
+be uploaded anywhere, and this section will describe that instead.
 
 ## Dependency Security
 

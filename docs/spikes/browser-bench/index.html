@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>bench</title>
+<script type="importmap">{"imports":{"pdfjs-dist":"/pdfjs/legacy/build/pdf.mjs","@cantoo/pdf-lib":"/pdflib/pdf-lib.esm.js"}}</script>
+<script type="module">
+import { GlobalWorkerOptions } from 'pdfjs-dist';
+GlobalWorkerOptions.workerSrc = '/pdfjs/legacy/build/pdf.worker.mjs';
+import { analyze, remediate } from './core.mjs';
+let peak = 0;
+const sample = () => { if (performance.memory) peak = Math.max(peak, performance.memory.usedJSHeapSize); };
+const timer = setInterval(sample, 50);
+window.run = async (file) => {
+  const t0 = performance.now();
+  const bytes = new Uint8Array(await (await fetch('/pdfs/' + file)).arrayBuffer());
+  const t1 = performance.now();
+  const a = await analyze(bytes.slice());
+  const t2 = performance.now();
+  const r = await remediate(bytes.slice(), { setLanguage: 'en', displayDocTitle: true, formTooltips: true });
+  const t3 = performance.now();
+  sample(); clearInterval(timer);
+  return { mb: +(bytes.length/1e6).toFixed(1), pages: a.imagePages.length, images: a.imagePages.reduce((s,p)=>s+p.imageCount,0),
+    fetchMs: Math.round(t1-t0), analyzeMs: Math.round(t2-t1), remediateMs: Math.round(t3-t2), outMb: +(r.bytes.length/1e6).toFixed(1),
+    peakHeapMb: Math.round(peak/1e6), fonts: a.textAnalysis };
+};
+window.ready = true;
+</script>

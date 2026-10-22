@@ -8,6 +8,15 @@ updates:
     groups:
       npm-minor-patch:
         update-types: ["minor", "patch"]
+    ignore:
+      # 2.x is a different API. The browser-first rewrite (PLAN.md, Phase 7)
+      # replaces pdf-parse with pdfjs-dist directly, so it isn't worth porting.
+      - dependency-name: "pdf-parse"
+        update-types: ["version-update:semver-major"]
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
 
   - package-ecosystem: "npm"
     directory: "/client"
@@ -17,21 +26,51 @@ updates:
     groups:
       npm-minor-patch:
         update-types: ["minor", "patch"]
+    ignore:
+      # eslint-plugin-jsx-a11y (6.10.2) only supports ESLint up to 9, and its
+      # accessibility rules matter more than the newest ESLint. Remove once a
+      # jsx-a11y release supports ESLint 10 (see closed PR #42).
+      - dependency-name: "eslint"
+        versions: [">=10"]
+      - dependency-name: "@eslint/js"
+        versions: [">=10"]
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
 
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
 
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    ignore:
+      # The image runs the Active LTS Node release only (DECISIONS.md, D-006).
+      # Node majors move by hand, together with CI and engines.node.
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(deps)"
