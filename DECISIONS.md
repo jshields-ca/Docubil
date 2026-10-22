@@ -24,7 +24,7 @@ moves it to `Accepted`. Never renumber or delete an entry. Supersede it instead.
 | [D-008](#d-008) | Release with Changesets and written highlights | Accepted | 2026-10-17 |
 | [D-009](#d-009) | Installable web app first, Windows desktop build later | Accepted | 2026-10-17 |
 | [D-010](#d-010) | Offer a free public site that never receives files | Proposed | 2026-10-17 |
-| [D-011](#d-011) | Replace `pdf-lib` with the maintained `@cantoo/pdf-lib` fork | Proposed | 2026-10-17 |
+| [D-011](#d-011) | Replace `pdf-lib` with the maintained `@cantoo/pdf-lib` fork | Accepted | 2026-10-22 |
 
 ---
 
@@ -192,14 +192,14 @@ the site launches as soon as Phase 7 ships (Phase 8 in PLAN.md).
 
 ### D-011
 
-**Replace `pdf-lib` with the maintained `@cantoo/pdf-lib` fork** · Proposed · 2026-10-17
+**Replace `pdf-lib` with the maintained `@cantoo/pdf-lib` fork** · Accepted · 2026-10-22
 
 **Context.** `pdf-lib` hasn't had a release since 1.17.1 (May 2022), and both
 today's server and the planned browser version depend on it. `@cantoo/pdf-lib`
 (2.11.1, September 2026) is an actively maintained fork with the same API. The
 spike ran on it without code changes.
 
-**Decision (proposed).** Swap it in at the start of Phase 6, behind the existing tests.
+**Decision.** Swap it in during Phase 6, behind the existing tests. Done: the server and the test helpers use `@cantoo/pdf-lib` 2.11, and every test, the accuracy corpus included, passes unchanged.
 
 **Consequences.** One dependency changes owner. It also pulls in `culori` and
 `node-html-better-parser` for features we don't use. Measured in a Vite

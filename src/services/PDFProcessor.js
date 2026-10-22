@@ -2,7 +2,7 @@
 
 const fs = require('fs').promises;
 const pdfParse = require('pdf-parse');
-const { PDFDocument, PDFName } = require('pdf-lib');
+const { PDFDocument, PDFName } = require('@cantoo/pdf-lib');
 const logger = require('../logger');
 
 class PDFProcessor {

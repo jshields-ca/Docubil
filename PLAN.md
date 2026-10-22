@@ -38,7 +38,7 @@ criteria gets re-scoped here, in the open, rather than quietly declared done.
 |---|---|---|
 | 0–4 | Audit, governance, CI hardening, frontend rebuild, GHCR releases | ✅ Done (v0.1.0) |
 | 5 | Project foundations refresh | 🟡 In review |
-| 6 | Accuracy baseline | 🟡 Defects fixed, corpus 29/~30; D-011 pending |
+| 6 | Accuracy baseline | 🟡 In review: defects fixed, corpus 29/~30, D-011 done |
 | 7 | Browser-first core and installable app | Planned |
 | 8 | Free public site | Planned, D-010 proposed |
 | 9 | Windows desktop build | Conditional |
@@ -132,7 +132,7 @@ that produces readable notes.
 4. Every relative doc link and anchor resolves, and no doc describes the old
    release process (`standard-version`, `npm run release`) as current or
    the license as anything but AGPL-3.0-only.
-5. The owner has reviewed the PR and the `Proposed` decisions (D-010, D-011).
+5. The owner has reviewed the PR and the `Proposed` decisions (D-011 accepted 2026-10-22; D-010 waits on a domain).
 
 ---
 
@@ -165,7 +165,7 @@ good).
      compliance"`. The first silences a WCAG 2.4.2 failure without fixing
      it; the second claims compliance nobody verified. A title should come
      from the document (first heading, or the file name), or be flagged.
-- Swap `pdf-lib` for `@cantoo/pdf-lib` (D-011, if accepted).
+- Swap `pdf-lib` for `@cantoo/pdf-lib` (D-011). ✅ Done.
 
 **Scope, out:** new checks, UI changes, architecture changes.
 
@@ -176,8 +176,8 @@ checks, including 6 real exports from LibreOffice Writer and Chromium. All
 of them currently pass: zero false positives or negatives. The same corpus
 against the pre-fix code had 6 false positives (5 alt text, 1 form tooltip)
 and 32 mismatches in all. Remaining: real files from Word, InDesign and
-scanners (gaps listed in `tests/corpus/README.md`), and `pdf-lib` → `@cantoo/pdf-lib`
-once D-011 is decided.
+scanners (gaps listed in `tests/corpus/README.md`). `pdf-lib` → `@cantoo/pdf-lib`
+is done (D-011).
 
 **Success criteria:**
 1. `npm run corpus` runs in CI on every PR and fails if any check's accuracy

@@ -4,7 +4,7 @@
  * PDFs with the structures the accuracy checks care about, built with
  * pdf-lib's low-level API so the tests need no binary fixtures.
  */
-const { PDFDocument, PDFName, PDFString, StandardFonts, rgb } = require('pdf-lib');
+const { PDFDocument, PDFName, PDFString, StandardFonts, rgb } = require('@cantoo/pdf-lib');
 
 // A 1×1 grey PNG.
 const PNG_1PX = Buffer.from(

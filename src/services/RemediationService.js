@@ -2,7 +2,7 @@
 
 const fs = require('fs').promises;
 const path = require('path');
-const { PDFDocument } = require('pdf-lib');
+const { PDFDocument } = require('@cantoo/pdf-lib');
 const { v4: uuidv4 } = require('uuid');
 const { remediatePDF } = require('./PythonBridge');
 const { detectLanguage } = require('./languageDetect');

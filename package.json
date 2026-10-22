@@ -23,6 +23,7 @@
     "version-packages": "node scripts/write-changelog.mjs && changeset version && npm install --package-lock-only --ignore-scripts --no-audit --no-fund"
   },
   "dependencies": {
+    "@cantoo/pdf-lib": "^2.11.1",
     "compression": "^1.8.2",
     "cors": "^2.8.6",
     "dotenv": "^18.0.6",
@@ -30,7 +31,6 @@
     "express-rate-limit": "^8.7.1",
     "helmet": "^8.3.0",
     "multer": "^2.4.0",
-    "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
