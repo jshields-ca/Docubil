@@ -256,20 +256,20 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
 
     // Post-upload magic bytes check (catches MIME spoofing)
     const validation = await pdfProcessor.validatePDF(filePath);
-    if (!validation.isValid) {
+    if (!validation.isValid || validation.needsPassword) {
       await fs.unlink(filePath).catch(() => {});
-      return res.status(400).json({
-        error: 'Uploaded file is not a valid PDF',
-        details: IS_PROD ? undefined : validation.errors,
-      });
-    }
-    if (validation.needsPassword) {
-      await fs.unlink(filePath).catch(() => {});
-      return res.status(400).json({
-        error:
-          'This PDF is password-protected, so it can\'t be checked. Open it with its password, ' +
-          'save a copy without one, and upload that copy.',
-      });
+      return res.status(400).json(
+        validation.isValid
+          ? {
+            error:
+              'This PDF is password-protected, so it can\'t be checked. Open it with its ' +
+              'password, save a copy without one, and upload that copy.',
+          }
+          : {
+            error: 'Uploaded file is not a valid PDF',
+            details: IS_PROD ? undefined : validation.errors,
+          }
+      );
     }
 
     // Persist job record

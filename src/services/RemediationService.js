@@ -308,13 +308,17 @@ function deriveTitle(context = {}) {
     return { title: heading, source: 'the document\'s first heading' };
   }
 
+  // File names come from the upload; 200 characters is plenty for a title.
   const name = (context.originalFilename || '')
+    .slice(0, 200)
     .replace(/\.pdf$/i, '')
     .replace(/[_\-.]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   // "scan0001", "document", "untitled", a UUID or a date say nothing
-  const meaningless = /^(scan|document|untitled|file|download|print|img|image|doc)?\s*[\d\s]*$/i;
+  // Whitespace is already collapsed to single spaces, so one class covers
+  // the digits and spaces (no overlapping quantifiers to backtrack over).
+  const meaningless = /^(?:scan|document|untitled|file|download|print|img|image|doc)?[\d ]*$/i;
   const words = name.match(/\p{L}{3,}/gu) || [];
   if (name && !meaningless.test(name) && words.length >= 1 && !/^[0-9a-f]{8} [0-9a-f]{4}/i.test(name)) {
     return { title: name, source: 'its file name' };
