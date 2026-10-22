@@ -12,7 +12,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const pinoHttp = require('pino-http');
 const swaggerUi = require('swagger-ui-express');
-const { v4: uuidv4, validate: uuidValidate } = require('uuid');
+const { randomUUID } = require('crypto');
 
 const { version: APP_VERSION } = require('./package.json');
 const logger = require('./src/logger');
@@ -130,9 +130,14 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // ─── UUID validation middleware ───────────────────────────────────────────────
+// Same rule as the `uuid` package's validate(): RFC 9562 versions 1–8, plus
+// the nil and max UUIDs.
+const UUID_PATTERN =
+  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
+
 function requireValidJobId(req, res, next) {
   const { jobId } = req.params;
-  if (!jobId || !uuidValidate(jobId)) {
+  if (!jobId || !UUID_PATTERN.test(jobId)) {
     return res.status(400).json({ error: 'Invalid job ID format' });
   }
   next();
@@ -205,7 +210,7 @@ app.get('/', (_req, res) => {
 
 // ─── POST /api/analyze ────────────────────────────────────────────────────────
 app.use('/api/analyze', (req, _res, next) => {
-  req.jobId = uuidv4();
+  req.jobId = randomUUID();
   next();
 });
 

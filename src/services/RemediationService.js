@@ -3,7 +3,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { PDFDocument } = require('@cantoo/pdf-lib');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const { remediatePDF } = require('./PythonBridge');
 const { detectLanguage } = require('./languageDetect');
 const logger = require('../logger');
@@ -39,7 +39,7 @@ class RemediationService {
 
     logger.info({ filePath, issueCount: issues.length, autoFix }, 'Starting remediation');
 
-    const outputFileName = jobId ? `${jobId}-remediated.pdf` : `${uuidv4()}-remediated.pdf`;
+    const outputFileName = jobId ? `${jobId}-remediated.pdf` : `${randomUUID()}-remediated.pdf`;
     const outputPath = path.join(this.outputDir, outputFileName);
 
     const fixedIssues = [];
