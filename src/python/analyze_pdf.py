@@ -9,6 +9,11 @@ import sys
 import json
 import os
 
+# The shared helpers live next to this script. Python normally puts the
+# script's folder on the import path, but not with PYTHONSAFEPATH=1 or -I,
+# so add it explicitly.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from pdf_structure import collect_figures, has_tooltip, iter_terminal_fields
 
 

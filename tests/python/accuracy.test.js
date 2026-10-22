@@ -190,3 +190,18 @@ describe('document title (#56)', () => {
     expect(source).not.toMatch(/Accessible Document|processed for accessibility compliance/);
   });
 });
+
+describePython('Python environment', () => {
+  it('finds its helper module even with PYTHONSAFEPATH set', async () => {
+    // PYTHONSAFEPATH=1 stops Python putting the script's own folder on the
+    // import path; the scripts add it themselves. Run the script directly:
+    // Jest sandboxes process.env, so setting it here wouldn't reach a child
+    // process started by PythonBridge.
+    const file = await write('safepath.pdf', await createNestedFormPDF());
+    const script = path.join(__dirname, '../../src/python/analyze_pdf.py');
+    const out = execFileSync(process.env.PYTHON_PATH || 'python3', [script, file], {
+      env: { ...process.env, PYTHONSAFEPATH: '1' },
+    });
+    expect(JSON.parse(out.toString()).formFields).toHaveLength(4);
+  });
+});
