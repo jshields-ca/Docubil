@@ -126,3 +126,16 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Only on the Version Packages PR (branch changeset-release/main, opened by
+  # .github/workflows/release.yml): fails until that version's release
+  # highlights file exists, so a release can't be merged without them.
+  release-highlights:
+    name: Release highlights
+    if: github.event_name == 'pull_request' && github.head_ref == 'changeset-release/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check this release has highlights
+        run: node scripts/build-release-notes.mjs --check-highlights "$(node -p "require('./package.json').version")"

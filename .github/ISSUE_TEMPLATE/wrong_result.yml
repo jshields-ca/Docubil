@@ -1,0 +1,66 @@
+name: Wrong result
+description: A check flagged something that's fine, missed a real problem, or a fix made the PDF worse
+labels: ["accuracy", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Accuracy reports are the most useful feedback Docubil can get. Each one can become a test PDF in our corpus, so the same mistake never comes back.
+
+        **Please don't attach confidential PDFs.** If you can, attach a copy with the sensitive content removed (redacted, or the problem page alone). If the problem only shows up with a private document, describe it as precisely as you can and we'll try to reproduce it.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What went wrong?
+      options:
+        - It flagged a problem that isn't there (false alarm)
+        - It missed a real problem
+        - A fix made the PDF worse or broke it
+        - A fix was reported but didn't actually change anything
+        - The report explains something wrongly
+    validations:
+      required: true
+
+  - type: input
+    id: check
+    attributes:
+      label: Which check or fix?
+      description: The title or ID shown in the report (for example "Document is not tagged for accessibility" or `structure-001`).
+      placeholder: e.g. structure-001
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: What did Docubil say, and what's actually true?
+      description: How do you know? For example, what Adobe Acrobat's accessibility checker, PAC, veraPDF or a screen reader showed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: pdf
+    attributes:
+      label: Sample PDF
+      description: Drag a PDF in here (with sensitive content removed), or describe how it was made (which app, which export settings).
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Docubil version
+      placeholder: e.g. 0.2.0, latest, or a commit SHA
+    validations:
+      required: true
+
+  - type: dropdown
+    id: level
+    attributes:
+      label: WCAG level used
+      options:
+        - AA
+        - AAA
+    validations:
+      required: false
