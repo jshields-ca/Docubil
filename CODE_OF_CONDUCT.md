@@ -54,8 +54,8 @@ representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainer at the contact listed in
-[SECURITY.md](SECURITY.md). All complaints will be reviewed and
+reported privately to the project maintainer at
+[jeremy@scootr.ca](mailto:jeremy@scootr.ca). All complaints will be reviewed and
 investigated promptly and fairly.
 
 Project maintainers who do not follow or enforce the Code of Conduct in

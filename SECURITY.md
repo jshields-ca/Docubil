@@ -13,8 +13,8 @@ support branch yet.
 Instead, report it privately using
 [GitHub's private vulnerability reporting](https://github.com/jshields-ca/Docubil/security/advisories/new)
 for this repository (Security tab → "Report a vulnerability"). If that is
-unavailable to you, contact the maintainer directly through the contact
-method listed on their GitHub profile.
+unavailable to you, email the maintainer at
+[jeremy@scootr.ca](mailto:jeremy@scootr.ca).
 
 Please include:
 

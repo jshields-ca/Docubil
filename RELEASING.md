@@ -120,3 +120,9 @@ hand-written `[Unreleased]` notes, so the section was renamed, the version
 bumped with `npm version`, and the tag pushed, which triggered the old
 tag-based workflow. Releases after it use the flow above. The pending
 `[Unreleased]` notes were converted into changesets when the switch was made.
+
+`v0.1.0` is kept as published: deleting a release, its tag and its image
+breaks anyone who pinned it, and leaves `CHANGELOG.md` pointing at nothing.
+It has known problems, all fixed for 0.2.0: a fresh Docker volume fails to
+start, reports 404 in Docker, and most automatic fixes aren't saved into the
+downloaded PDF. Its GitHub Release carries a "Known issues" note saying so.

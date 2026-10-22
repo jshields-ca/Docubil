@@ -178,17 +178,40 @@ US$100–400 a year) is only spent if the desktop build is needed.
 **Context.** Most users won't self-host. The owner's concern was that a public
 site would cost a lot in bandwidth and processing.
 
-**Decision (proposed).** After D-007, host the built app as a static site
-(GitHub Pages or Cloudflare Pages, both free for this size). The user's own
-browser does the processing, so hosting cost doesn't grow with documents
-processed. Each visitor downloads the app once, about 0.9 MB gzipped as
-measured (the UI 117 KB, pdf.js legacy build 144 + 382 KB, pdf-lib 175–244 KB),
-and then it's cached.
+**Decision (proposed).** After D-007, host the built app as a static site. The
+user's own browser does the processing, so hosting cost doesn't grow with
+documents processed. Each visitor downloads the app once, about 0.9 MB
+gzipped as measured (the UI 117 KB, pdf.js legacy build 144 + 382 KB,
+`@cantoo/pdf-lib` 244 KB), and then it's cached.
 
-**Consequences.** Needs a domain decision and a privacy statement that says,
-truthfully, "your files never leave your device". No analytics that could
-undermine that statement. **Waiting on the owner:** the domain, and whether
-the site launches as soon as Phase 7 ships (Phase 8 in PLAN.md).
+Not before Phase 7: today's version uploads every document to the server and
+needs Node.js and Python running all the time. A public instance would hold
+strangers' documents on our disk and need a server sized for the busiest
+day: the cost and privacy exposure this decision exists to avoid.
+
+**Where to host it** (all serve static files over free HTTPS, which an
+installable web app requires):
+
+| Option | Cost | Deploys | Notes |
+|---|---|---|---|
+| GitHub Pages | Free | Automatically on each release (a workflow job) | **Recommended.** Same place as the code; custom subdomain via one DNS CNAME record |
+| Cloudflare Pages | Free | Automatically from the repo | Equivalent; adds another account |
+| DreamHost shared hosting | Already paid for | Upload `public/` by SFTP/rsync, or a deploy job | Works fine for a static site with Let's Encrypt HTTPS. It couldn't run *today's* Node + Python server |
+
+**The address matters more than the host.** An installed web app belongs to
+the exact address it was installed from (`https://docubil.example.com`). If the
+site moves later, everyone has to reinstall and loses any saved settings, and
+old links break unless redirected. So pick an address you'll keep:
+- a subdomain of a domain you own now (`docubil.scootr.ca` or
+  `docubil.effuse.io`), labelled a public demo, if a dedicated domain may come
+  later and users can live with reinstalling once; or
+- a dedicated domain (`docubil.app`, `docubil.org` or similar) from day one, if
+  it's meant to be a lasting public service.
+
+**Consequences.** Needs a privacy statement that says, truthfully, "your files
+never leave your device", and no analytics that could undermine it.
+**Waiting on the owner:** the address, and whether the site launches as soon
+as Phase 7 ships (Phase 8 in PLAN.md).
 
 ### D-011
 
